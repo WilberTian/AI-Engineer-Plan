@@ -160,7 +160,7 @@
     <h2 id="w6"><span class="num">W06</span>解析、分块、入库</h2>
     <p class="lead">第 6 周 · 这一周决定天花板。切分做错了，后面怎么优化都补不回来。</p>
 
-    <details class="task" open id="p2-1">
+    <details class="task" id="p2-1">
       <summary>
         <span class="tid">P2-1</span>
         <span class="tname">选一份你真会去查的语料（200–500 页）</span>
@@ -469,7 +469,7 @@ def chunk_file(path: Path, strategy: str = "structural") -&gt; list[Chunk]:
       </div>
     </details>
 
-    <details class="task" open id="p2-4">
+    <details class="task" id="p2-4">
       <summary>
         <span class="tid">P2-4</span>
         <span class="tname">pgvector 入库：schema 比代码重要</span>
@@ -615,7 +615,7 @@ uv run python scripts/ingest.py structural</code></pre>
       </div>
     </details>
 
-    <details class="task" open id="p2-5">
+    <details class="task" id="p2-5">
       <summary>
         <span class="tid">P2-5</span>
         <span class="tname">造 20 条 query 标注答案，量出 recall@5（本阶段最重要的一步）</span>
@@ -1364,7 +1364,7 @@ LIMIT 10;</code></pre>
     <h2 id="w9"><span class="num">W09</span>eval v2：把「答得对不对」拆成五个数</h2>
     <p class="lead">第 9 周 · 这一周结束时，你要能做到：给任意一条失败回答，5 分钟内判定问题出在检索还是生成。</p>
 
-    <details class="task" open id="p2-12">
+    <details class="task" id="p2-12">
       <summary>
         <span class="tid">P2-12</span>
         <span class="tname">30 条测试集：分类型、标 gold、含 6 条不可答</span>
@@ -1401,7 +1401,7 @@ LIMIT 10;</code></pre>
       </div>
     </details>
 
-    <details class="task" open id="p2-13">
+    <details class="task" id="p2-13">
       <summary>
         <span class="tid">P2-13</span>
         <span class="tname">五个指标：检索两个、生成三个</span>

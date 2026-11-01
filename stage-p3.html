@@ -159,7 +159,7 @@
     <h2 id="w10"><span class="num">W10</span>读懂 harness：先把「为什么需要」搞清楚</h2>
     <p class="lead">第 10 周 · 这一周不写新功能，只做一件事：把每节代码和自己的 P1 实现对照，找出「它多做了什么、为什么值得做」。</p>
 
-    <details class="task" open id="p3-1">
+    <details class="task" id="p3-1">
       <summary>
         <span class="tid">P3-1</span>
         <span class="tname">读源码的四步法（每节 30 分钟，别用别的方式）</span>
@@ -200,7 +200,7 @@
       </div>
     </details>
 
-    <details class="task" open id="p3-2">
+    <details class="task" id="p3-2">
       <summary>
         <span class="tid">P3-2</span>
         <span class="tname">s01–s03：loop / tool / permission（对照你的 P1）</span>
@@ -315,7 +315,7 @@
     <h2 id="w11"><span class="num">W11</span>上下文、记忆、错误恢复</h2>
     <p class="lead">第 11 周 · 这一周的主题是「长任务为什么活不下来」。四个原因：上下文爆了、忘了关键约束、出错了不会绕、任务状态没地方存。</p>
 
-    <details class="task" open id="p3-4">
+    <details class="task" id="p3-4">
       <summary>
         <span class="tid">P3-4</span>
         <span class="tname">s07–s09：skill 加载 / 上下文压缩 / 记忆</span>
@@ -520,7 +520,7 @@ def build_system(extra: str = "") -&gt; str:
     <h2 id="w12"><span class="num">W12</span>持久化、中断恢复、人工审批</h2>
     <p class="lead">第 12 周 · 这一周把 agent 从「一个进程」变成「一个有状态的服务」。做完你就能回答「你的 agent 跑到一半机器挂了会怎样」。</p>
 
-    <details class="task" open id="p3-7">
+    <details class="task" id="p3-7">
       <summary>
         <span class="tid">P3-7</span>
         <span class="tname">checkpoint + resume：kill -9 之后能接着跑</span>
@@ -657,7 +657,7 @@ uv run python scripts/resume.py --run-id test-crash</code></pre>
       </div>
     </details>
 
-    <details class="task" open id="p3-8">
+    <details class="task" id="p3-8">
       <summary>
         <span class="tid">P3-8</span>
         <span class="tname">人工审批点：危险动作必须停下来等人</span>
@@ -765,7 +765,7 @@ if needs_approval(name, args):
       <p><b>对你的直接影响：几乎没有。</b>你这张卡写的是 <code>stdio</code> 传输的本地 server，不走 Streamable HTTP，<b>照原样写就行</b>。唯一的动作是——写完之后读一遍官方 changelog，确认自己知道无状态改了什么。为什么值得花这 20 分钟：面试问「MCP 架构」时，说出「2026 年改成无状态核了，所以能放普通负载均衡后面」，比背「MCP 是客户端-服务端协议」值钱得多。完整对照表见 <a href="resources.html#mcp2026">Harness 地图 §4</a>。</p>
     </div>
 
-    <details class="task" open id="p3-9">
+    <details class="task" id="p3-9">
       <summary>
         <span class="tid">P3-9</span>
         <span class="tname">写一个 MCP server，暴露你的语料检索</span>

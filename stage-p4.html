@@ -152,7 +152,7 @@
     <h2 id="w14"><span class="num">W14</span>失败工程：主动把系统打坏</h2>
     <p class="lead">第 14 周 · 这一周不许写新功能。只做一件事：用五种方式把现有系统搞坏，看它怎么死。</p>
 
-    <details class="task" open id="p4-1">
+    <details class="task" id="p4-1">
       <summary>
         <span class="tid">P4-1</span>
         <span class="tname">先搭一个故障注入框架（20 行，能开关）</span>
@@ -247,7 +247,7 @@ def maybe_fault(tool_name: str, result: ToolResult) -&gt; ToolResult:
       </div>
     </details>
 
-    <details class="task" open id="p4-2">
+    <details class="task" id="p4-2">
       <summary>
         <span class="tid">P4-2</span>
         <span class="tname">五类故障逐个打，每类都要「不崩 + 可读」</span>
@@ -515,7 +515,7 @@ def backoff_delay(attempt: int, base: float = 1.0, cap: float = 20.0) -&gt; floa
     <h2 id="w15"><span class="num">W15</span>安全：把「不可信」当作默认假设</h2>
     <p class="lead">第 15 周 · 核心心法一句话：<b>模型产生的任何东西都是不可信的，检索到的任何内容都是不可信的，工具返回的任何内容都是不可信的。</b></p>
 
-    <details class="task" open id="p4-4">
+    <details class="task" id="p4-4">
       <summary>
         <span class="tid">P4-4</span>
         <span class="tname">最小权限 + 不可信内容隔离</span>
@@ -615,7 +615,7 @@ def safe_url(raw: str) -&gt; str:
       </div>
     </details>
 
-    <details class="task" open id="p4-5">
+    <details class="task" id="p4-5">
       <summary>
         <span class="tid">P4-5</span>
         <span class="tname">写一份「我的 agent 能被怎样攻击」清单（10 条）</span>
@@ -717,7 +717,7 @@ CREATE TRIGGER audit_no_update BEFORE UPDATE OR DELETE ON audit_log
     <h2 id="w16"><span class="num">W16</span>缓冲周：只复盘，不学新东西</h2>
     <p class="lead">第 16 周 · 这一周的产出一行代码都不该是新的。它的作用是<b>把前 15 周的欠账补上，别让 P5 建立在漏洞上</b>。</p>
 
-    <details class="task" open id="p4-7">
+    <details class="task" id="p4-7">
       <summary>
         <span class="tid">P4-7</span>
         <span class="tname">错题本：把 P1–P4 的自测重做一遍</span>
@@ -760,7 +760,7 @@ CREATE TRIGGER audit_no_update BEFORE UPDATE OR DELETE ON audit_log
     <h2 id="w17"><span class="num">W17</span>成本与延迟：能算出钱，才能说服人</h2>
     <p class="lead">第 17 周 · 这一阶段的输出要能被一个不懂技术的老板看懂：<b>「原来每个任务 3 毛，现在 2 毛 1，质量没掉。」</b></p>
 
-    <details class="task" open id="p4-8">
+    <details class="task" id="p4-8">
       <summary>
         <span class="tid">P4-8</span>
         <span class="tname">给每个 run 记一笔账（先有数据再谈优化）</span>
@@ -837,7 +837,7 @@ def summarize(usages: list[Usage]) -> dict[str, float]:
       </div>
     </details>
 
-    <details class="task" open id="p4-9">
+    <details class="task" id="p4-9">
       <summary>
         <span class="tid">P4-9</span>
         <span class="tname">模型路由：难任务升级、简单任务降级（附质量证明）</span>

@@ -225,7 +225,13 @@ node -v   <span class="cmt"># 必须 ≥ 22，v7 不再支持 CJS require()</spa
 
         <h5>服务端：一个 route handler</h5>
 <pre><code>// app/api/chat/route.ts
-import { streamText, convertToModelMessages, type UIMessage } from "ai";
+import {
+  streamText,
+  convertToModelMessages,
+  toUIMessageStream,
+  createUIMessageStreamResponse,
+  type UIMessage,
+} from "ai";
 import { openai } from "@ai-sdk/openai";
 
 export const maxDuration = 60;
@@ -237,12 +243,17 @@ export async function POST(req: Request) {
     model: openai("gpt-4.1-mini"),
     <span class="cmt">// v7：system 已改名 instructions（v6 及以前叫 system）</span>
     instructions: "你是个人知识库助手。回答简洁，引用文件时写出文件名。",
-    messages: convertToModelMessages(messages),
+    <span class="cmt">// convertToModelMessages 自 v6 起是 async，不 await 会拿到一个 Promise，</span>
+    <span class="cmt">// 模型收到的 messages 是空的——那种「不报错但答得莫名其妙」的坑</span>
+    messages: await convertToModelMessages(messages),
   });
 
-  <span class="cmt">// v7：toUIMessageStreamResponse() 已标弃用。
-  // 照官方 v7 文档换成等价写法，别照旧教程抄这一行。</span>
-  return result.toUIMessageStreamResponse();
+  <span class="cmt">// v7：result.toUIMessageStreamResponse() 已弃用，拆成两个顶层无状态函数。</span>
+  <span class="cmt">// 注意 result.stream 就是以前的 fullStream（含工具调用和 reasoning 事件）。</span>
+  <span class="cmt">// 弃用只发生在「结果对象上的方法」，流式本身没变，别退回去用非流式。</span>
+  return createUIMessageStreamResponse({
+    stream: toUIMessageStream({ stream: result.stream }),
+  });
 }</code></pre>
 
         <h5>客户端：<code>useChat</code> + 渲染 <code>parts</code></h5>
@@ -322,7 +333,8 @@ export default function Page() {
         <div class="callout">
           <b>三个必须知道的版本差异</b>
           <p><b>①</b> <code>useChat</code> 在 v5 之后<b>不再管输入框状态</b>——<code>input</code>/<code>handleInputChange</code> 要自己用 <code>useState</code>，发送改用 <code>sendMessage({ text })</code>。<b>②</b> 返回值从 <code>toDataStreamResponse()</code> 改名为 <code>toUIMessageStreamResponse()</code>。看到旧教程用错名字会报 500 或前端一直 loading。</p>
-          <p><b>③ v7（2026-07）又改了一批</b>：<code>system</code>→<code>instructions</code>、<code>onFinish</code>→<code>onEnd</code>、<code>fullStream</code>→<code>stream</code>，<code>toUIMessageStreamResponse()</code> 进入弃用。<b>你真正要做的是记住「这三代改名的方向」</b>——名字永远会变，但「服务端产出流、客户端消费 parts」这个结构从 v4 到现在没变过。抓住结构，剩下的照着官方文档补。</p>
+          <p><b>③ v7（2026-07）又改了一批</b>：<code>system</code>→<code>instructions</code>、<code>onFinish</code>→<code>onEnd</code>、<code>fullStream</code>→<code>stream</code>、<code>stepCountIs</code>→<code>isStepCount</code>；<code>toUIMessageStreamResponse()</code> 这类「结果对象上的方法」整体弃用，拆成两个顶层函数 <code>toUIMessageStream({ stream: result.stream })</code> + <code>createUIMessageStreamResponse({ stream })</code>；<code>convertToModelMessages</code> 变成 async，必须 await。<b>你真正要做的是记住「这三代改名的方向」</b>——名字永远会变，但「服务端产出流、客户端消费 parts」这个结构从 v4 到现在没变过。抓住结构，剩下的照着官方迁移文档补。</p>
+          <p class="muted">最容易漏的两处不是名字，是<b>语义</b>：<code>convertToModelMessages</code> 忘了 await，模型收到空 messages，不报错但答得莫名其妙；<code>isStepCount</code> 名字写错成旧名，停止条件消失，前端一直转圈。两个都表现为「代码没报错、行为不对」。</p>
         </div>
 
         <div class="out"><b>产物</b>两个文件 + 能逐字出字的界面</div>
@@ -348,7 +360,7 @@ export default function Page() {
 
         <h5>服务端：定义工具（带 execute）</h5>
 <pre><code>// app/api/chat/route.ts（增量）
-import { tool, stepCountIs } from "ai";
+import { tool, isStepCount } from "ai";
 import { z } from "zod";
 
 <span class="cmt">// description 和参数说明会原样发给模型，和 P1 的 tools.py 是同一份协议，</span>
@@ -377,13 +389,15 @@ const tools = {
   }),
 };
 
-<span class="cmt">// stepCountIs 是这一层唯一的预算闸：前端没有 max_steps，多轮工具调用只能靠它挡住</span>
+<span class="cmt">// isStepCount 是这一层唯一的预算闸：前端没有 max_steps，多轮工具调用只能靠它挡住</span>
+<span class="cmt">// v6 里它叫 stepCountIs，v7 改名为 isStepCount；名字写错不会热更新报错，</span>
+<span class="cmt">// 只会变成「没有停止条件」，前端一直转圈</span>
 const result = streamText({
   model: openai("gpt-4.1-mini"),
-  system: SYSTEM,
-  messages: convertToModelMessages(messages),
+  instructions: SYSTEM,
+  messages: await convertToModelMessages(messages),
   tools,
-  stopWhen: stepCountIs(4),   // 最多 4 步，防前端无限请求
+  stopWhen: isStepCount(4),   // 最多 4 步，防前端无限请求
 });</code></pre>
 
         <h5>客户端：按 part 类型渲染不同 UI</h5>
@@ -634,7 +648,7 @@ import { BlockSchema } from "@/lib/blocks";
 const { object } = await generateObject({
   model: openai("gpt-4.1-mini"),
   schema: BlockSchema,
-  system: `把答案组织成 blocks。可用类型：
+  instructions: `把答案组织成 blocks。可用类型：
 - text: 普通段落
 - source_list: 引用来源列表（有引用时必用）
 - metric_row: 2-4 个关键数字

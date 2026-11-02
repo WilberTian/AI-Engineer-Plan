@@ -1017,7 +1017,7 @@ from __future__ import annotations
 import os
 from contextlib import contextmanager
 
-from langfuse import Langfuse, observe
+from langfuse import Langfuse
 
 <span class="cmt"># 三个 key 都给默认值：缺配置时应用要能跑（只是没有 trace），不能一启动就崩</span>
 langfuse = Langfuse(
@@ -1030,7 +1030,9 @@ langfuse = Langfuse(
 @contextmanager
 def trace_run(run_id: str, task: str):
     <span class="str">"""一次任务 = 一个 trace，每个 step = 一个 span。"""</span>
-    with observe(name="agent_run", as_type="span") as span:
+    <span class="cmt"># v4 把 start_span / start_as_current_span 统一成 start_as_current_observation，</span>
+    <span class="cmt"># 类型靠 as_type 区分；v3 那套 start_as_current_span 在 v4 里已经没有了</span>
+    with langfuse.start_as_current_observation(name="agent_run", as_type="span") as span:
         span.update(input={"task": task}, metadata={"run_id": run_id})
         <span class="cmt"># 拿自己的 run_id 当 trace 的业务锚点：排查时能在日志和 trace 之间直接对齐，不用猜时间</span>
         yield span
@@ -1039,12 +1041,19 @@ def trace_run(run_id: str, task: str):
 def log_step(name: str, payload: dict, usage: dict | None = None) -&gt; None:
     <span class="str">"""手工打点：工具调用、上下文大小、token 用量。"""</span>
     <span class="cmt"># 手工打点，不指望自动埋点：自动埋点通常只覆盖 LLM 调用，工具耗时和上下文大小它看不见</span>
-    langfuse.create_event(name=name, metadata=payload)
     if usage:
-        <span class="cmt"># 让成本列有数：必须把 usage 报给 Langfuse</span>
-        langfuse.update_current_generation(usage_details=usage)</code></pre>
+        <span class="cmt"># 有 usage 就记成 generation：Langfuse 只在这个类型上算成本</span>
+        <span class="cmt"># v4 没有 update_current_generation 了，统一走 observation 自己的 update()</span>
+        <span class="cmt"># usage_details 的键名按 langfuse.model.ModelUsage 来，别直接用供应商的 prompt_tokens</span>
+        with langfuse.start_as_current_observation(
+            name=name, as_type="generation", input=payload
+        ) as gen:
+            gen.update(usage_details=usage)
+    else:
+        with langfuse.start_as_current_observation(name=name, as_type="span", input=payload):
+            pass</code></pre>
 
-        <p class="muted">更省事的做法是用 <code>@observe()</code> 装饰 <code>loop.run</code>、<code>llm.with_tools</code>、每个 <code>tool.fn</code>——嵌套调用会自动变成嵌套 span。先试这个，不够细再手工打点。</p>
+        <p class="muted">更省事的做法是用 <code>@observe()</code>（v4 里仍在，<code>from langfuse import observe</code>）装饰 <code>loop.run</code>、<code>llm.with_tools</code>、每个 <code>tool.fn</code>——嵌套调用会自动变成嵌套 span。先试这个，不够细再手工打点。</p>
 
         <h5>trace 里必须能看到的五样东西</h5>
         <div class="tw">

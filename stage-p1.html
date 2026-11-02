@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="P1 地基（W02–W05）：Python 速通、Pydantic、asyncio，手写 100–150 行 agent loop，评测集 v1。">
+<meta name="description" content="P1 地基（W02–W05）：Python 速通、Pydantic、asyncio，手写 150–180 行 agent loop，评测集 v1。">
 <meta name="theme-color" content="#4c4ddc" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#12141c" media="(prefers-color-scheme: dark)">
 <meta property="og:type" content="article">
-<meta property="og:description" content="P1 地基（W02–W05）：Python 速通、Pydantic、asyncio，手写 100–150 行 agent loop，评测集 v1。">
+<meta property="og:description" content="P1 地基（W02–W05）：Python 速通、Pydantic、asyncio，手写 150–180 行 agent loop，评测集 v1。">
 <meta property="og:title" content="P1 · 地基：Python + agent loop · W02–W05">
 <meta property="og:image" content="https://wilbertian.github.io/AI-engineer-plan/assets/readme/cover.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -104,7 +104,7 @@
       <p>这四周决定后面 19 周的成败。跳过手写、直接上框架的人，P3 会全程懵。</p>
       <div class="deliv">
         <span>llm.py（四能力封装）</span>
-        <span>loop.py（100–150 行）</span>
+        <span>loop.py（150–180 行）</span>
         <span>evals/v1.jsonl（10 条）</span>
         <span>一条命令跑出通过率</span>
       </div>
@@ -704,7 +704,11 @@ class LLM:
         </ol>
 
         <div class="out"><b>产物</b><code>scripts/schema_probe.py</code> + <code>notes/schema-failures.md</code></div>
-        <div class="verify"><b>验收</b>10 次里 ≥9 次通过校验；注入那条<b>不能</b>被完全劫持（可以有奇怪回答，但不能让整个对象结构崩掉）。</div>
+        <div class="verify"><b>验收</b>分两半判，因为性质不同：
+          <br><b>① 确定性（必须 100% 过，跟模型强弱无关）</b>：十次里没有一次抛异常——每次都能拿到一个 <code>Answer</code> 对象或明确的 <code>refused</code>/错误结果，不允许裸字符串、不允许崩。
+          <br><b>② 结构不能崩</b>：注入那条可以有奇怪回答，但 <code>{"answer":"hacked"}</code> 这种不该被当成合法答案放行（Pydantic 兜住）。骗子赢不算你输，结构塌了才算。
+          <br><b>③ 统计性（只记录，不设门槛）</b>：10 次的通过数如实写进 <code>notes/schema-failures.md</code>，作为你后面 eval 的基线。<b>不要</b>用「≥9 次」当标准——n=10 时 1 条就是 10 个点，这个量级分辨不出「模型变差了」和「这次运气不好」。真正要看的是每条失败的根因：能说清它是 schema 太松、prompt 没说清、还是模型能力不够。
+        </div>
         <div class="stuck"><b>卡住怎么办</b>
           <ul>
             <li><b>注入那条总是成功劫持</b>：这是正常现象，取决于模型。你要做的是让<b>结构</b>不崩（Pydantic 兜住），而不是指望模型不被骗。真正的防护在 P4。</li>
@@ -891,7 +895,7 @@ probe("max_tokens 负数", messages=[{"role": "user", "content": "hi"}], max_tok
 
     <!-- ============ W04 ============ -->
     <h2 id="w4"><span class="num">W04</span>手写 agent loop：这一阶段的核心</h2>
-    <p class="lead">第 4 周 · 100–150 行，不用框架。做完你会有一种「原来就这么点东西」的释然——以及随之而来的困惑「那为什么框架那么复杂」。后者正是 P3 要回答的。</p>
+    <p class="lead">第 4 周 · 150–180 行，不用框架。做完你会有一种「原来就这么点东西」的释然——以及随之而来的困惑「那为什么框架那么复杂」。后者正是 P3 要回答的。</p>
 
     <details class="task" id="p1-9">
       <summary>
@@ -1305,10 +1309,11 @@ print(f"\n总消息数: {len(res.messages)}")
 print(f"tokens: in={res.usage.prompt_tokens} out={res.usage.completion_tokens} "
       f"cached={res.usage.cached_tokens} total={res.usage.total_tokens}")</code></pre>
 
-        <div class="out"><b>产物</b><code>src/agentlab/loop.py</code>（约 140 行）+ <code>scripts/run_agent.py</code>（输出带 token 三行）</div>
-        <div class="verify"><b>验收</b>
-          ① 三个不同任务能选对工具（「查笔记」「读某文件」「抓一个网页」）；② <code>res.messages</code> 里能看到完整的 user → assistant(tool_calls) → tool → assistant 序列；③ 故意给一个不存在的文件路径，模型能根据「同目录候选」自我修正；④ 每次运行都打印 <code>res.usage</code> 的 in / out / cached 三个数，且它们<b>不是全 0</b>——全 0 说明你取的字段名和这家供应商对不上（换供应商时最常见的坑）。
-          <br><b>自检</b>：<code>labs/p1-10/</code> 有 14 条离线判分，判的是协议层（②这一类）；① 和 ③ 要真模型才判得了，别以为全绿就算过。
+        <div class="out"><b>产物</b><code>src/agentlab/loop.py</code>（约 170 行，有效代码 120 行上下）+ <code>scripts/run_agent.py</code>（输出带 token 三行）</div>
+        <div class="verify"><b>验收</b>分两类判，因为 ②④ 和 ①③ 的性质完全不同：
+          <br><b>确定性（必须 100% 过，测的是你的代码）</b>：② <code>res.messages</code> 里能看到完整的 user → assistant(tool_calls) → tool → assistant 序列；④ 每次运行都打印 <code>res.usage</code> 的 in / out / cached 三个数，且它们<b>不是全 0</b>——全 0 说明你取的字段名和这家供应商对不上（换供应商时最常见的坑）。
+          <br><b>统计性（测的是模型，只记录 + 会解释）</b>：① 三个不同任务（「查笔记」「读某文件」「抓一个网页」）各跑 3 次，记下来几次选对；③ 故意给不存在的文件路径，记下来几次触发自我修正。<b>这两条不设通过线</b>——模型每次回答都不同，单次结果既不能证成也不能证伪。要交的是失败时的归因：是工具 description 没说清、是候选工具太多、还是模型没看懂错误信息。说得出这三种区别，比「9 次都对」有用。
+          <br><b>自检</b>：<code>labs/p1-10/</code> 有 14 条离线判分，判的正是 ②④ 这类协议层；①③ 它判不了，别以为全绿就算过。
         </div>
         <div class="stuck"><b>卡住怎么办</b>
           <ul>
@@ -1366,7 +1371,10 @@ print(f"tokens: in={res.usage.prompt_tokens} out={res.usage.completion_tokens} "
         </div>
 
         <div class="out"><b>产物</b><code>notes/error-recovery.md</code>：三组实验的对照数据 + 上面那个问题的答案</div>
-        <div class="verify"><b>验收</b>实验 A 里模型能改对路径；能说出「错误回灌」的适用边界（可自愈 vs 不可自愈 vs 不安全）。</div>
+        <div class="verify"><b>验收</b>① 三组实验都有对照数据，A 组要落到「带候选值 vs 只报不存在，成功率差多少」这个数上——跑 5 次记次数，别用一次结果下结论；如果两边都是 5/5 或都是 0/5，说明你的错误信息没造成可观测差异，回去改措辞，不是判定自己没学会。
+          <br>② 能说清「错误回灌」的适用边界：可自愈 / 不可自愈 / 不安全，三类各举一个你系统里的真实例子。
+          <br>③ 模型在 A 组一次都没改对时，先怀疑错误信息写得不够像建议（见「卡住怎么办」），把改前改后的差异记下来——这条比「改对了」值钱，因为换个更强的模型它会自己变好，而错误信息的措辞只能你自己改。
+        </div>
         <div class="stuck"><b>卡住怎么办</b>
           <ul>
             <li><b>模型看到错误就放弃</b>：在 SYSTEM 里加「工具报错时先尝试修正参数再决定是否放弃」，或把错误信息写得更像建议（「该文件不存在，你可能想读 notes/todo.md」）。</li>

@@ -55,10 +55,22 @@ FLAGS_MUTATIONS = [
 
 ABLATE_MUTATIONS = [
     (
-        "一次关两个特性",
-        '    off = run_eval(flags=replace(BASE, **{f: False}))',
-        '    off = run_eval(flags=replace(BASE, **{f: False, "rerank": False}))',
+        "一次改两个特性",
+        '    off = run_eval(flags=replace(BASE, **{f: not getattr(BASE, f)}))',
+        '    off = run_eval(flags=replace(BASE, **{f: not getattr(BASE, f), "rerank": False}))',
         "每次只关一个",
+    ),
+    (
+        "特性一律写死 False（默认关的那个等于没改）",
+        '    off = run_eval(flags=replace(BASE, **{f: not getattr(BASE, f)}))',
+        '    off = run_eval(flags=replace(BASE, **{f: False}))',
+        "每个特性都真的被改过",
+    ),
+    (
+        "基线放回循环里（跑 N 次）",
+        '    off = run_eval(flags=replace(BASE, **{f: not getattr(BASE, f)}))',
+        '    on = run_eval(flags=BASE)\n    off = run_eval(flags=replace(BASE, **{f: not getattr(BASE, f)}))',
+        "基线只算一次",
     ),
     (
         "输出里不报成本",

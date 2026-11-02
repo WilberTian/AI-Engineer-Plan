@@ -16,6 +16,12 @@ from verify_reference import build  # noqa: E402
 
 MUTATIONS = [
     (
+        "空回复不算拒答（直接当 answered）",
+        '    if not raw:\n        return REFUSE, "refused_empty"',
+        "    if False:\n        return REFUSE, \"refused_empty\"",
+        "模型返回空串不算答好",
+    ),
+    (
         "去掉第一层（硬门槛形同虚设）",
         "    if not chunks or top_score < 0.35:      # 阈值要靠 W09 的 unanswerable 集来定",
         "    if False:      # 阈值要靠 W09 的 unanswerable 集来定",

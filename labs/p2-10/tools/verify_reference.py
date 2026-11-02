@@ -18,7 +18,7 @@ LAB = HERE.parent
 sys.path.insert(0, str(LAB.parent / "_shared"))
 from refkit import verify_reference  # noqa: E402
 
-KNOWN_RED = ["模型返回空串不算答好"]
+KNOWN_RED: list[str] = []   # 空回复已单独算 refused_empty（2026-11-02）
 
 # 手册里的函数用到四个外部名字，这里补齐。calls 记录调用次数，供「不调模型」那几条用
 SHIM = '''

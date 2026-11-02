@@ -15,7 +15,7 @@ LAB = HERE.parent
 sys.path.insert(0, str(LAB.parent / "_shared"))
 from refkit import verify_reference  # noqa: E402
 
-KNOWN_RED = ["短但含难度标记仍判 hard"]
+KNOWN_RED: list[str] = []   # 难度标记已提到长度规则之前（2026-11-02）
 
 
 def build(tmp: Path, code: str) -> None:

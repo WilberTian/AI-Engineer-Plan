@@ -19,8 +19,8 @@ from verify_reference import build  # noqa: E402
 MUTATIONS = [
     (
         "路径比较退回 startswith（前缀绕过）",
-        "    if not any(str(p).startswith(str(root)) for root in ALLOWED_ROOTS):",
-        "    if False:",
+        "    if not any(p.is_relative_to(root) for root in ALLOWED_ROOTS):",
+        '    if not any(str(p).startswith(str(root)) for root in ALLOWED_ROOTS):',
         "前缀绕过 ../data-evil 被拦",
     ),
     (
@@ -36,16 +36,28 @@ MUTATIONS = [
         "file:// 被拦且理由提协议",
     ),
     (
-        "不做内网 IP 判断（只靠域名白名单）",
-        "    try:\n        ip = ipaddress.ip_address(host)\n        if ip.is_private or ip.is_loopback or ip.is_link_local:\n            raise ValueError(\"不允许访问内网地址\")",
-        "    try:\n        ip = ipaddress.ip_address(host)\n        if False:\n            raise ValueError(\"不允许访问内网地址\")",
-        "云元数据地址被拦",
+        "内网 IP 却报「域名不在白名单」（理由被吞的等价效果）",
+        '            raise ValueError(f"不允许访问内网地址：{host}")',
+        '            raise ValueError(f"域名不在白名单：{host}")',
+        "内网地址的拒绝理由点明「内网」",
     ),
     (
-        "内容完全不转义",
-        '    safe = text.replace("<untrusted>", "&lt;untrusted&gt;").replace(\n        "</untrusted>", "&lt;/untrusted&gt;")',
-        "    safe = text",
+        "内容不做转义",
+        '    body = escape(text, quote=False)',
+        "    body = text",
         "内容里的闭合标签被转义",
+    ),
+    (
+        "只转义一对精确字符串（旧写法）",
+        '    body = escape(text, quote=False)',
+        '    body = text.replace("&lt;untrusted&gt;", "xxxx").replace("&lt;/untrusted&gt;", "yyyy").replace("<untrusted>", "&lt;untrusted&gt;").replace("</untrusted>", "&lt;/untrusted&gt;")',
+        "内容里的开标签被转义",
+    ),
+    (
+        "source 不转义",
+        "    src = escape(source, quote=True)",
+        "    src = source",
+        "source 属性不可注入",
     ),
 ]
 

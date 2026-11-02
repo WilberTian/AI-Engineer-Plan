@@ -11,6 +11,7 @@ agentlab/rag/answer.py
         返回 (回复文本, 原因)，原因只允许三种：
             "refused_low_score"   第一层：分数/证据不足
             "refused_by_model"    第二层：模型自己判断资料不够
+            "refused_empty"       第二层：模型返回空串（用户看到的是空白，不能算 answered）
             "answered"            正常回答
 ```
 
@@ -40,7 +41,7 @@ agentlab/rag/answer.py
 - **阈值该定多少**：要靠 unanswerable 集跑分布，离线判不了（CONTRACT 只卡 0.35 这个手册值）。
 - **过度拒答**：要真跑 12 条 answerable 看拒了多少。
 - **模型会不会老实说不知道**：那是模型行为，第二层只是「给出口」。
-- **第 12 条**：参考实现**不达标**（模型返回空串时它判 `answered`），见 NOTES §2。
+- **第 12 条**：模型返回空串时必须单独算一类（`refused_empty`），否则通过率会把它记成成功，见 NOTES §2。
 
 ## §4 你的自由
 

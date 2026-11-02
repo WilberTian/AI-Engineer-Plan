@@ -1,6 +1,6 @@
 # P4-11 要点核对表：四段埋点与分位数
 
-判分：`python3 labs/p4-11/harness/run_checks.py --target <你的项目>`（15 条，参考实现 14 绿 1 红）
+判分：`python3 labs/p4-11/harness/run_checks.py --target <你的项目>`（15 条，参考实现 15 绿）
 
 ---
 

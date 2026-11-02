@@ -1,6 +1,6 @@
 # P4-13 要点核对表：成本分解表
 
-判分：`python3 labs/p4-13/harness/run_checks.py --target <你的项目>`（12 条，参考实现 11 绿 1 红）
+判分：`python3 labs/p4-13/harness/run_checks.py --target <你的项目>`（12 条，参考实现 12 绿）
 
 ---
 

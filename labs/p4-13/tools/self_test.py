@@ -16,6 +16,12 @@ from verify_reference import build  # noqa: E402
 
 MUTATIONS = [
     (
+        "非 llm span 直接跳过（检索/重排消失）",
+        '        cost = s.in_tok * COST_IN + s.out_tok * COST_OUT if s.kind == "llm" else 0.0',
+        '        if s.kind != "llm":\n            continue\n        cost = s.in_tok * COST_IN + s.out_tok * COST_OUT',
+        "检索/重排 span 不被静默丢掉",
+    ),
+    (
         "不按名字聚合（每次调用单独一行）",
         "        agg = rows[s.name]\n        agg[0] += cost\n        agg[1] += s.ms",
         "        rows[s.name + str(s.ms)][0] += cost\n        rows[s.name + str(s.ms)][1] += s.ms",

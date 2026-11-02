@@ -46,10 +46,22 @@ MUTATIONS = [
         "重复引用去重",
     ),
     (
-        "拒答句不豁免",
-        '    uncited = [s for s in sentences if not CITE.search(s) and "资料中没有" not in s]',
-        "    uncited = [s for s in sentences if not CITE.search(s)]",
+        "拒答句式不在豁免名单里",
+        'REFUSAL = ("资料中没有", "无法回答", "没有相关信息")',
+        "REFUSAL = ()",
         "拒答句豁免",
+    ),
+    (
+        "加回 15 字长度过滤（短句被跳过）",
+        "    sentences = [s for s in sentences if len(CITE.sub(\"\", s).strip()) >= 2]",
+        "    sentences = [s for s in sentences if len(s) > 15]",
+        "短句也检查",
+    ),
+    (
+        "只按中文句号切（英文整段算一句）",
+        'SENT_SPLIT = re.compile(r"[。！？；\\n]|(?<=[.!?])\\s+")',
+        'SENT_SPLIT = re.compile(r"[。\\n]")',
+        "英文句子也被切分",
     ),
     (
         "ok 永远为真",

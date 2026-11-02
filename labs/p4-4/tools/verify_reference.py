@@ -2,7 +2,8 @@
 
     python3 labs/p4-4/tools/verify_reference.py
 
-参考实现有 4 条不达标，都已核对过、写进 NOTES §2，用 expect_red 标出来而不是假装它全过。
+2026-11-02：15 条全绿。此前 5 条红色（前缀绕过、内网理由、开标签、大小写变体、source 注入）
+都是真漏洞，已改正文代码修掉，修法见 NOTES §2。
 """
 from __future__ import annotations
 
@@ -14,13 +15,7 @@ LAB = HERE.parent
 sys.path.insert(0, str(LAB.parent / "_shared"))
 from refkit import verify_reference  # noqa: E402
 
-KNOWN_RED = [
-    "前缀绕过 ../data-evil 被拦",
-    "内网地址的拒绝理由点明「内网」",
-    "内容里的开标签被转义",
-    "大小写变体也转义",
-    "source 属性不可注入",
-]
+KNOWN_RED: list[str] = []   # 5 条已全部修掉（2026-11-02），别再把条目加回来当挡箭牌
 
 
 def build(tmp: Path, code: str) -> None:

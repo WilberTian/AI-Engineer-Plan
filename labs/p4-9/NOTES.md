@@ -1,6 +1,6 @@
 # P4-9 要点核对表：模型路由
 
-判分：`python3 labs/p4-9/harness/run_checks.py --target <你的项目>`（14 条，参考实现 13 绿 1 红）
+判分：`python3 labs/p4-9/harness/run_checks.py --target <你的项目>`（14 条，参考实现 14 绿）
 
 ---
 

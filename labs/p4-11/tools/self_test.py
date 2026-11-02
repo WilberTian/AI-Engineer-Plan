@@ -16,21 +16,27 @@ from verify_reference import build  # noqa: E402
 
 MUTATIONS = [
     (
+        "派生时长不加下界（乱序出负值）",
+        '        return max(0.0, (self.t_end - self.t_first_token) * 1000) if self.t_first_token else 0.0',
+        '        return (self.t_end - self.t_first_token) * 1000 if self.t_first_token else 0.0',
+        "时间点乱序不出负值",
+    ),
+    (
         "TTFT 用结束时间算（把生成段也算进去）",
-        "        return (self.t_first_token - self.t_start) * 1000 if self.t_first_token else 0",
-        "        return (self.t_end - self.t_start) * 1000",
+        '        return max(0.0, (self.t_first_token - self.t_start) * 1000) if self.t_first_token else 0.0',
+        '        return max(0.0, (self.t_end - self.t_start) * 1000)',
         "ttft 由首 token 时间算出",
     ),
     (
         "非流式时把 TTFT 当成总时长",
-        "        return (self.t_first_token - self.t_start) * 1000 if self.t_first_token else 0",
-        "        return (self.t_end - self.t_start) * 1000 if self.t_first_token else (self.t_end - self.t_start) * 1000",
+        '        return max(0.0, (self.t_first_token - self.t_start) * 1000) if self.t_first_token else 0.0',
+        '        return max(0.0, (self.t_end - self.t_start) * 1000)',
         "非流式时 ttft 为 0",
     ),
     (
         "total 只算首 token 之前（漏掉生成段）",
-        "        return (self.t_end - self.t_start) * 1000",
-        "        return (self.t_first_token - self.t_start) * 1000",
+        '        return max(0.0, (self.t_end - self.t_start) * 1000)',
+        '        return max(0.0, (self.t_first_token - self.t_start) * 1000)',
         "total 是全程跨度",
     ),
     (

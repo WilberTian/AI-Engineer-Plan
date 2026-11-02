@@ -15,7 +15,7 @@ LAB = HERE.parent
 sys.path.insert(0, str(LAB.parent / "_shared"))
 from refkit import verify_reference  # noqa: E402
 
-KNOWN_RED = ["检索/重排 span 不被静默丢掉"]
+KNOWN_RED: list[str] = []   # 非 llm span 也出行（成本记 0）（2026-11-02）
 
 
 def build(tmp: Path, code: str) -> None:

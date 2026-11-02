@@ -40,7 +40,7 @@ scripts/error_probe.py     探测五种错误，统一只打三样
   （供应商改文案就漂）。这一步**必须人工做一次**，判分器替代不了。
 - **HTTP 状态码映射**：401/429/500 各对应什么动作，是你写进 P4 容错表的结论。
 
-## §3.5 边界：参考实现有 6 条红
+## §3.5 边界：这 6 条曾经全红（已修，现在 11/11）
 
 `probe()` 里 `messages=[]` 写成了固定参数，而五次探测都传 `messages=...`，
 于是五次全部变成 `TypeError: got multiple values for keyword argument`——

@@ -14,7 +14,7 @@ LAB = HERE.parent
 sys.path.insert(0, str(LAB.parent / "_shared"))
 from refkit import verify_reference  # noqa: E402
 
-KNOWN_RED = ["时间点乱序不出负值"]
+KNOWN_RED: list[str] = []   # 三个派生时长都加了 max(0, ...) 下界（2026-11-02）
 
 
 def build(tmp: Path, code: str) -> None:

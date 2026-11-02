@@ -1152,10 +1152,15 @@ from agentlab.evals import run_eval
 from agentlab.flags import Flags
 
 BASE = Flags()
+<span class="cmt"># 基线在循环外只算一次。放进循环里，每个特性配的是不同基线，</span>
+<span class="cmt"># delta 里就混进了采样噪声，四个特性之间的差值互相不可比——而这正是消融要回答的问题。</span>
+on = run_eval(flags=BASE)
 
 for f in ("query_rewrite", "rerank", "self_check", "cache_prefix"):
-    on = run_eval(flags=BASE)
-    off = run_eval(flags=replace(BASE, **{f: False}))
+    <span class="cmt"># 用 not getattr(...) 翻转，而不是一律写 False：self_check 默认就是 False，</span>
+    <span class="cmt"># replace(BASE, self_check=False) 什么都没改，delta 恒为 0，你会读成「这个特性没用」。</span>
+    <span class="cmt"># 注意方向：默认关的特性，这里的 delta 意思是「打开它带来的变化」，写结论时要说清。</span>
+    off = run_eval(flags=replace(BASE, **{f: not getattr(BASE, f)}))
     d_pass5 = on.pass5 - off.pass5
     d_cost = on.cost - off.cost
     print(f"{f:14s} Pass@5 {d_pass5:+.3f}  成本 {d_cost:+.4f}  延迟 {on.p95 - off.p95:+.0f}ms")</code></pre>
@@ -1170,9 +1175,10 @@ for f in ("query_rewrite", "rerank", "self_check", "cache_prefix"):
         <div class="out"><b>产物</b><code>src/agentlab/flags.py</code> + <code>scripts/ablate.py</code> + <code>notes/ablation.md</code>：4 个特性的三列 delta 表 + 一句「哪个该砍」的结论</div>
 
                 <div class="callout warn">
-          <b>本卡的参考实现自己就红了 2 条</b>
-          <p>手册正文这份代码，在 <code>labs/p5-14/</code> 的 15 条判分里有 <b>2 条是红的</b>——这是实测，不是放水。基线在循环内被重算、以及默认值让某次对比变成空操作。<br>
-          跑 <code>python3 labs/p5-14/tools/verify_reference.py</code> 能看到它红在哪几条；修法写在 <code>labs/p5-14/NOTES</code>。<b>别把这几条当成「手册写错了」，把它们当成这张卡真正要你做的事</b>——判分器判的是机制，机制对了自然就绿。</p>
+          <b>消融脚本里两个坑，都会让 delta 变成假的 0</b>
+          <p>① <b>基线写在循环里</b>：每个特性配的是不同基线，delta 里就混进了采样噪声，四个特性之间的差值互相不可比——而这恰恰是消融唯一要回答的问题。<br>
+          ② <b>一律用 <code>replace(BASE, **{f: False})</code> 关特性</b>：<code>self_check</code> 默认就是 <code>False</code>，这一行什么都没改，两边完全一样，delta 恒为 0，而你会读成「这个特性没用」。要用 <code>not getattr(BASE, f)</code> 翻转，并在结论里说清「默认关的特性，这个 delta 是打开它的效果」。<br>
+          跑 <code>python3 labs/p5-14/tools/verify_reference.py</code> 看这 15 条判分；<code>labs/p5-14/NOTES</code> 有实测。</p>
         </div>
 
 <div class="verify"><b>验收</b>

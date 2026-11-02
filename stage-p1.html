@@ -248,7 +248,7 @@
         <p>然后手写这个（这是后面所有结构化输出的模板）：</p>
 <pre><code>from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, model_validator
 
 
 class Citation(BaseModel):
@@ -262,19 +262,24 @@ class Answer(BaseModel):
     citations: list[Citation] = Field(default_factory=list)
     refused: bool = Field(default=False, description="是否因缺少依据而拒答")
 
-    @field_validator("citations")
-    @classmethod
-    def need_citation_unless_refused(cls, v: list[Citation], info):
-        <span class="cmt"># 关键业务规则：要么有引用，要么明确拒答。两者都不满足就是坏数据。</span>
-        if not v and not info.data.get("refused", False):
+    @model_validator(mode="after")
+    def need_citation_unless_refused(self) -&gt; "Answer":
+        <span class="cmt"># 为什么不用 field_validator("citations")：两处都会错，而且是反方向的错。</span>
+        <span class="cmt"># ① 字段级校验在「调用方没传 citations」时根本不触发（validate_default 默认是 False），</span>
+        <span class="cmt">#    于是不传就等于跳过规则——这是放过。</span>
+        <span class="cmt"># ② info.data 里只有「已校验过的前序字段」，refused 写在 citations 后面，取不到，</span>
+        <span class="cmt">#    于是 refused=true 也会被判违规——这是误杀。</span>
+        if not self.citations and not self.refused:
             raise ValueError("非拒答回答必须至少有一条引用")
-        return v</code></pre>
+        return self</code></pre>
 
         <div class="out"><b>产物</b>上面这个模型存进 <code>src/agentlab/schema.py</code></div>
                 <div class="callout warn">
-          <b>本卡的参考实现自己就红了 2 条</b>
-          <p>手册正文这份代码，在 <code>labs/p1-2/</code> 的 12 条判分里有 <b>2 条是红的</b>——这是实测，不是放水。业务规则在两个方向上都错了：该拒的放过了、该放的误杀了。<br>
-          跑 <code>python3 labs/p1-2/tools/verify_reference.py</code> 能看到它红在哪几条；修法写在 <code>labs/p1-2/NOTES §4</code>。<b>别把这几条当成「手册写错了」，把它们当成这张卡真正要你做的事</b>——判分器判的是机制，机制对了自然就绿。</p>
+          <b>业务规则写在字段级校验里，两个方向都会错</b>
+          <p>① <b>放过</b>：<code>@field_validator("citations")</code> 在调用方<b>没传</b> <code>citations</code> 时不触发（默认不校验默认值），等于「不传就跳过规则」。<br>
+          ② <b>误杀</b>：<code>info.data</code> 里只有已校验过的<b>前序</b>字段，<code>refused</code> 声明在 <code>citations</code> 后面就取不到，于是 <code>refused=true</code> 也被判违规。<br>
+          规则跨了两个字段，就用 <code>@model_validator(mode="after")</code> 在模型级判一次——它一定跑，也拿得到全部字段。<br>
+          跑 <code>python3 labs/p1-2/tools/verify_reference.py</code>（<b>需要 pydantic</b>）看这 12 条判分；没装就先 <code>uv add pydantic</code>。</p>
         </div>
 
 <div class="verify"><b>验收</b>

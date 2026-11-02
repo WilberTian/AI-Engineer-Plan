@@ -19,7 +19,7 @@ sys.path.insert(0, str(HERE.parent.parent / "_shared"))
 from checkkit import exit_missing, run_all  # noqa: E402
 
 THRESHOLD = 0.35
-REASONS = {"refused_low_score", "refused_by_model", "answered"}
+REASONS = {"refused_low_score", "refused_by_model", "refused_empty", "answered"}
 CHUNK = {"doc_id": "d1.md", "section": "1", "text": "默认端口是 8080。"}
 REPLY = "默认端口是 8080（来源 d1.md）。"
 

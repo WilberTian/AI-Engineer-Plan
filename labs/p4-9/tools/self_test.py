@@ -16,6 +16,12 @@ from verify_reference import build  # noqa: E402
 
 MUTATIONS = [
     (
+        "只看历史、不看难度标记",
+        '    if any(m in task for m in hard_markers) or history_len > 10:',
+        '    if history_len > 10:',
+        "短但含难度标记仍判 hard",
+    ),
+    (
         "难度标记被删掉（只靠长度和默认档）",
         '    hard_markers = ("分析", "对比", "为什么", "设计", "重构", "debug", "证明")',
         "    hard_markers = ()",

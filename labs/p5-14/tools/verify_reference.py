@@ -23,7 +23,7 @@ sys.path.insert(0, str(LAB.parent / "_shared"))
 from htmlcode import block, sha  # noqa: E402
 
 PAGE, CARD = "stage-p5.html", "p5-14"
-KNOWN_RED = ["每个特性都真的被改过", "基线只算一次"]
+KNOWN_RED: list[str] = []   # 基线移出循环 + 特性翻转改为 not getattr（2026-11-02）
 
 
 def build(root: Path, flags_code: str, ablate_code: str) -> None:

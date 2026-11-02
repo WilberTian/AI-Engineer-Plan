@@ -16,6 +16,12 @@ from verify_reference import build  # noqa: E402
 
 MUTATIONS = [
     (
+        "中文查询退回 query.split()（切不出词）",
+        '    hits = [m for m in store.values() if q & _terms(m.value)]',
+        '    hits = [m for m in store.values() if any(w in m.value for w in query.split())]',
+        "中文查询能召回",
+    ),
+    (
         "冲突时并存而不是覆盖",
         "    store[m.key] = m            # 后写的覆盖先写的：用户改主意了",
         '    store[m.key + ":" + m.source] = m',

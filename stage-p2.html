@@ -1120,6 +1120,10 @@ import re
 from dataclasses import dataclass
 
 CITE = re.compile(r"\[(\d+)\]")
+<span class="cmt"># 切句要覆盖中英文：只按「。」切，一整段英文会被算成一句，覆盖率立刻失真</span>
+SENT_SPLIT = re.compile(r"[。！？；\n]|(?&lt;=[.!?])\s+")
+<span class="cmt"># 这几句是「我没找到」，没有来源可标，不该算未引用</span>
+REFUSAL = ("资料中没有", "无法回答", "没有相关信息")
 
 
 @dataclass
@@ -1136,16 +1140,23 @@ class CiteCheck:
 def check(answer: str, n_chunks: int) -&gt; CiteCheck:
     cited = sorted({int(m) for m in CITE.findall(answer)})
     invalid = [c for c in cited if c &lt; 1 or c &gt; n_chunks]
-    <span class="cmt"># 粗粒度：按句号/换行切，看哪些句子没带引用也不像「拒答」</span>
-    sentences = [s.strip() for s in re.split(r"[。\n]", answer) if len(s.strip()) &gt; 15]
-    uncited = [s for s in sentences if not CITE.search(s) and "资料中没有" not in s]
+    <span class="cmt"># 别加 `len(s) &gt; 15` 这种长度过滤：「Token 上限是 8000」会被整句跳过，</span>
+    <span class="cmt"># 而事实句恰恰是最需要引用的一类。只滤掉「纯编号」这种碎片。</span>
+    sentences = [s.strip() for s in SENT_SPLIT.split(answer)]
+    sentences = [s for s in sentences if len(CITE.sub("", s).strip()) &gt;= 2]
+    uncited = [
+        s for s in sentences
+        if not CITE.search(s) and not any(k in s for k in REFUSAL)
+    ]
     return CiteCheck(cited=cited, invalid=invalid, uncited_sentences=uncited)</code></pre>
 
         <div class="out"><b>产物</b>带引用的 <code>generate.py</code> + <code>cite.py</code> 校验器</div>
                 <div class="callout warn">
-          <b>本卡的参考实现自己就红了 2 条</b>
-          <p>手册正文这份代码，在 <code>labs/p2-9/</code> 的 14 条判分里有 <b>2 条是红的</b>——这是实测，不是放水。引用编号与覆盖率这两条没真正生效。<br>
-          跑 <code>python3 labs/p2-9/tools/verify_reference.py</code> 能看到它红在哪几条；修法写在 <code>labs/p2-9/NOTES</code>。<b>别把这几条当成「手册写错了」，把它们当成这张卡真正要你做的事</b>——判分器判的是机制，机制对了自然就绿。</p>
+          <b>切句这一行，两个坑都在「看着挺合理」的位置</b>
+          <p>① <b>加长度过滤</b>（<code>len(s) &gt; 15</code>）会把「Token 上限是 8000」整句跳过——而<b>短句恰恰是最需要引用的事实句</b>，长句才是解释。<br>
+          ② <b>只按「。」切</b>，一整段三句英文只算一句，只要末尾有个 <code>[1]</code> 就算全段有引用，中间两句没来源也查不出来。<br>
+          修法：中英文标点都切（但别用字符类直接切 <code>.</code>，<code>3.5</code> 会被切断，用「标点后跟空白」），并且不过滤长度，只滤掉「纯编号」碎片。<br>
+          跑 <code>python3 labs/p2-9/tools/verify_reference.py</code> 看这 14 条判分；<code>labs/p2-9/NOTES §2</code> 有实测。</p>
         </div>
 
 <div class="verify"><b>验收</b>随机抽 20 条回答，<code>invalid</code> 为空，<code>uncited_sentences</code> ≤1；人工核对 5 条，引用编号指向的块确实包含该结论。<br><b>自检</b><code>labs/p2-9/</code> 有 14 条离线判分（编号基数、块间分隔、超范围引用、未引用句覆盖），跑 <code>python3 labs/p2-9/harness/run_checks.py --target .</code>；判不了的那部分写在它的 CONTRACT §3。</div>
@@ -1182,7 +1193,11 @@ def answer(question: str, top_score: float, chunks: list) -&gt; tuple[str, str]:
     raw = llm.chat([
         {"role": "system", "content": SYSTEM_WITH_REFUSE_RULE},
         {"role": "user", "content": USER_TMPL.format(context=ctx, question=question)},
-    ])
+    ]).strip()
+    <span class="cmt"># 空回复单独算一类：用户看到的是空白，可通过率会把它记成一次成功。</span>
+    <span class="cmt"># 指标里必须单独一格，不然「拒答率」会把这批悄悄算进「答了」。</span>
+    if not raw:
+        return REFUSE, "refused_empty"
     if "资料中没有" in raw or "无法回答" in raw:
         return REFUSE, "refused_by_model"
     return raw, "answered"</code></pre>
@@ -1201,9 +1216,10 @@ def answer(question: str, top_score: float, chunks: list) -&gt; tuple[str, str]:
 
         <div class="out"><b>产物</b>两层拒答实现 + 一张分数分布表（12 条可答 / 3 条不可答各自的 top_score）</div>
                 <div class="callout warn">
-          <b>本卡的参考实现自己就红了 1 条</b>
-          <p>手册正文这份代码，在 <code>labs/p2-10/</code> 的 13 条判分里有 <b>1 条是红的</b>——这是实测，不是放水。拒答的某一层没按要求实现。<br>
-          跑 <code>python3 labs/p2-10/tools/verify_reference.py</code> 能看到它红在哪几条；修法写在 <code>labs/p2-10/NOTES</code>。<b>别把这几条当成「手册写错了」，把它们当成这张卡真正要你做的事</b>——判分器判的是机制，机制对了自然就绿。</p>
+          <b>这里有个最容易漏的边界：模型返回空串</b>
+          <p>空串既不是「答了」也不是「拒答」，但如果代码只判 <code>if "资料中没有" in raw</code>，它会一路走到 <code>return raw, "answered"</code>——<b>指标里的拒答率看不见它，通过率却把它算成一次成功</b>，而用户看到的是空白。<br>
+          所以第二层要单独分出 <code>refused_empty</code>：理由不是「好看」，是因为这个数不进单独一格就永远查不出来。<br>
+          跑 <code>python3 labs/p2-10/tools/verify_reference.py</code> 看这 13 条判分；<code>labs/p2-10/NOTES</code> 记了这一条的实测与修法。</p>
         </div>
 
 <div class="verify"><b>验收</b>3 条 unanswerable 全部被拒；12 条 answerable 至少 10 条正常回答（拒答率 ≤17%）。
@@ -1781,6 +1797,7 @@ def tally(cases: list[dict], before: dict[str, bool], after: dict[str, bool]) -&
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, asdict
 from pathlib import Path
 
@@ -1805,12 +1822,25 @@ def upsert(store: dict[str, Memory], m: Memory) -&gt; str:
     return "updated"            <span class="cmt"># 单独计数，冲突率是记忆质量第一指标</span>
 
 
+def _terms(text: str) -&gt; set[str]:
+    <span class="str">"""切出可比对的片段。中文没有空格，`query.split()` 只会得到一整串。
+
+    英文按词切，中文补「字二元组」——不引分词库时的最小方案。
+    上生产直接换嵌入向量，这层就是占位。
+    """</span>
+    words = set(re.findall(r"[a-z0-9]+", text.lower()))
+    han = "".join(re.findall(r"[\u4e00-\u9fff]+", text))
+    words |= {han[i:i + 2] for i in range(len(han) - 1)}
+    return words
+
+
 def recall(store: dict[str, Memory], query: str, k: int = 5) -&gt; str:
     <span class="str">"""按需注入：只取相关的几条拼进本轮，不要全量塞进 system。
 
     这里用关键词匹配示意；上生产换成向量检索，复用 P2 的 embedder。
     """</span>
-    hits = [m for m in store.values() if any(w in m.value for w in query.split())]
+    q = _terms(query)
+    hits = [m for m in store.values() if q &amp; _terms(m.value)]
     hits.sort(key=lambda m: m.kind != "preference")   <span class="cmt"># 偏好排在一般事实前面</span>
     return "\n".join(f"- {m.value}" for m in hits[:k])
 
@@ -1852,9 +1882,10 @@ def save(path: Path, store: dict[str, Memory]) -&gt; None:
         <div class="out"><b>产物</b><code>src/agentlab/memory.py</code> + <code>evals/memory_v1.jsonl</code>（三层各 3 条，共 9 条跨会话用例）+ <code>notes/memory.md</code>（选了哪种格式、为什么、换另一种会差在哪）</div>
 
                 <div class="callout warn">
-          <b>本卡的参考实现自己就红了 1 条</b>
-          <p>手册正文这份代码，在 <code>labs/p2-17/</code> 的 14 条判分里有 <b>1 条是红的</b>——这是实测，不是放水。有一条写入/读取行为不达标。<br>
-          跑 <code>python3 labs/p2-17/tools/verify_reference.py</code> 能看到它红在哪几条；修法写在 <code>labs/p2-17/NOTES</code>。<b>别把这几条当成「手册写错了」，把它们当成这张卡真正要你做的事</b>——判分器判的是机制，机制对了自然就绿。</p>
+          <b>召回那行有个中文陷阱：<code>query.split()</code> 切不出中文词</b>
+          <p>「我吃辣吗」按空格切只有一个元素，而记忆里存的是「不吃辣」——<code>w in m.value</code> 永远是 False，于是<b>用户明明存了偏好，问起来却说不知道</b>，而且不报错。<br>
+          这张卡里用「英文按词切 + 中文字二元组」兜住（「我吃辣」和「不吃辣」都在 <code>吃辣</code> 上相交）；上生产直接换嵌入向量，这层只是占位。<br>
+          跑 <code>python3 labs/p2-17/tools/verify_reference.py</code> 看这 14 条判分；<code>labs/p2-17/NOTES</code> 有实测。</p>
         </div>
 
 <div class="verify"><b>验收</b>

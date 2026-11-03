@@ -100,7 +100,7 @@
       <div class="ph-tag">P3 · Week 10–13</div>
       <h2>Agent 运行时：从「能跑一次」到「能跑很久」</h2>
       <p><b>目标：</b>把你的 loop 升级成 harness——能中断恢复、能压缩上下文、能审批危险动作、能被完整观测。</p>
-      <p>这一阶段你不需要从零发明任何东西：<a href="https://github.com/shareAI-lab/learn-claude-code" target="_blank" rel="noopener">learn-claude-code</a>（17 节）和 <a href="https://github.com/shareAI-lab/claw0" target="_blank" rel="noopener">claw0</a>（10 节）两个公开仓库已经把这些拆成了可读的积木——<code>git clone</code> 下来即可，不需要申请或付费。<b>你的任务是读懂、删减、并说清为什么删。</b>二十七节里只有 14 节必读——哪节读、哪节跳过、凭什么判断，在 <a href="resources.html#repomap">资源库 §5.9 末的判据表</a>。</p>
+      <p>这一阶段你不需要从零发明任何东西：<a href="https://github.com/shareAI-lab/learn-claude-code" target="_blank" rel="noopener">learn-claude-code</a>（17 节）和 <a href="https://github.com/shareAI-lab/claw0" target="_blank" rel="noopener">claw0</a>（10 节）两个公开仓库已经把这些拆成了可读的积木——<code>git clone</code> 下来即可，不需要申请或付费。<b>你的任务是读懂、删减、并说清为什么删。</b>二十七节里只有 12 节必读——哪节读、哪节跳过、凭什么判断，在 <a href="resources.html#repomap">资源库 §5.9 末的判据表</a>。</p>
       <div class="deliv">
         <span>可恢复的 harness</span>
         <span>压缩策略对照表</span>
@@ -118,7 +118,7 @@
           <thead><tr><th style="width:52px">周</th><th style="width:15%">主题</th><th>必看</th><th style="width:29%">选看</th></tr></thead>
           <tbody>
             <tr><td><b>W10</b></td><td>读 harness</td><td><code>learn-claude-code</code> <b>s01–s06</b>；12-Factor Agents 前 6 条</td><td><code>claw0</code> s01–s02（与 lcc 重叠，跳过不影响）</td></tr>
-            <tr><td><b>W11</b></td><td>上下文与恢复</td><td><code>learn-claude-code</code> <b>s07–s09</b>（skill / compact / memory，对应 P3-4 + P3-5）；Effective context engineering</td><td>Claude cookbook 的 compaction notebook</td></tr>
+            <tr><td><b>W11</b></td><td>上下文与恢复</td><td><code>learn-claude-code</code> <b>s07–s09</b>（skill / compact / memory，对应 P3-4）；Effective context engineering</td><td>Claude cookbook 的 compaction notebook</td></tr>
             <tr><td><b>W12</b></td><td>持久化</td><td>12-Factor 的 launch-pause-resume；<code>learn-claude-code</code> s10（任务落盘）</td><td><code>claw0</code> s03（JSONL 落盘与重放）、s08 投递；LangGraph checkpoint 源码</td></tr>
             <tr><td><b>W13</b></td><td>MCP + trace</td><td>modelcontextprotocol.io；python-sdk；<code>learn-claude-code</code> <b>s14</b>（工具发现与组装）；Langfuse 自托管文档</td><td>DeepLearning.AI 的 MCP 短课</td></tr>
           </tbody>
@@ -216,9 +216,9 @@
             <tbody>
               <tr>
                 <td><code>s01_agent_loop</code></td>
-                <td>while + stop_reason 的最小循环</td>
+                <td>while True + 「没有 <code>tool_use</code> 就 return」的最小循环，<b>没有步数上限</b></td>
                 <td><code>loop.py</code> 的 for + 三个停止条件</td>
-                <td>我用 <code>for range(max_steps)</code>，它用 <code>while</code> + 显式 <code>stop_reason</code>。后者更容易在「模型主动停止 / 达到上限 / 被中断」之间区分——这个区分在持久化时很关键</td>
+                <td>它 153 行，<b>连 <code>max_steps</code> 都没有</b>——赌模型自己会停。你的 <code>for range(max_steps)</code> 才是生产写法：一次跑飞就是账单事故。所以别把它当「更成熟」照抄，成熟的地方在别处（工具结果回灌、环境注入）</td>
               </tr>
               <tr>
                 <td><code>s02_tool_use</code></td>
@@ -312,7 +312,7 @@
     </details>
 
     <!-- ============ W11 ============ -->
-    <h2 id="w11"><span class="num">W11</span>上下文、记忆、错误恢复</h2>
+    <h2 id="w11"><span class="num">W11</span>上下文、记忆、提示词分层</h2>
     <p class="lead">第 11 周 · 这一周的主题是「长任务为什么活不下来」。四个原因：上下文爆了、忘了关键约束、出错了不会绕、任务状态没地方存。</p>
 
     <details class="task" id="p3-4">
@@ -380,7 +380,7 @@
         <div class="verify"><b>验收</b>能说出「压缩时绝对不能丢的四样东西」（用户约束、已确认结论、未完成待办、失败过的路径）；能说出 s09 里「什么时候该写记忆」的判断条件，并指出它对应 P2-17 的哪一条设计。</div>
         <div class="stuck"><b>卡住怎么办</b>
           <ul>
-            <li><b>「压缩逻辑看不懂」</b>：先只读 README（中文的），读懂「什么时候压、压掉什么」，代码里找对应的 if 和字符串拼接就行。</li>
+            <li><b>「压缩逻辑看不懂」</b>：先只读中文版 <code>README.zh.md</code>，读懂「什么时候压、压掉什么」，代码里找对应的 if 和字符串拼接就行。</li>
             <li><b>「memory 那节太长」</b>：只看「写入条件」和「检索方式」两个函数。其余跳过。</li>
           </ul>
         </div>
@@ -390,33 +390,50 @@
     <details class="task" id="p3-5">
       <summary>
         <span class="tid">P3-5</span>
-        <span class="tname">s10–s12：system prompt 组装 / 错误恢复 / 任务系统</span>
+        <span class="tname">把 SYSTEM 常量改成分层组装（前缀稳定，才吃得到缓存）</span>
         <span class="tmin">周日 2h</span>
       </summary>
       <div class="task-body">
-        <div class="why"><b>为什么</b>：s10 会让你重新审视自己的 SYSTEM 常量——你可能一直是「想一句加一句」，而成熟的做法是分层组装。s11 则直接对应 P4 的容错设计。</div>
+        <div class="why"><b>为什么</b>：你可能一直是「想一句往 SYSTEM 里加一句」，加到二十行就没人说得清哪句管什么。分层组装的用处有两个：<b>改一层不牵动另一层</b>，以及<b>把每轮都变的东西放到最后</b>——前缀稳定才可能命中 prompt 缓存，否则每轮都是全量计费。</div>
 
+        <h5>五段各管什么（按稳定性从前到后）</h5>
         <div class="tw wide">
           <table>
-            <thead><tr><th style="width:170px">节</th><th>要点</th><th>对你的直接用处</th></tr></thead>
+            <thead><tr><th style="width:150px">段</th><th>管什么</th><th>放错位置的后果</th></tr></thead>
             <tbody>
               <tr>
-                <td><code>s10_system_prompt</code></td>
-                <td>分层组装：身份 → 能力边界 → 工具使用规则 → 输出格式 → 当前环境信息（动态）</td>
-                <td>把 P1 的 <code>SYSTEM</code> 常量改成函数：<code>build_system(ctx)</code>，动态部分（时间、可用工具、用户偏好）在运行时注入</td>
+                <td><b>身份</b></td>
+                <td>你是什么、服务谁——一句话，不夹带能力说明</td>
+                <td>身份和能力混成一段，以后改一次能力定义就动到最稳定那段前缀</td>
               </tr>
               <tr>
-                <td><code>s11_error_recovery</code></td>
-                <td>错误分类 → 可重试/需改参数/需上报；重试要带退避和上限；错误要压缩后回灌</td>
-                <td>P4 的故障注入会用这套分类。现在先对照你的 loop 缺哪几层</td>
+                <td><b>能力边界</b></td>
+                <td>能访问哪些目录、不能做什么、不知道就说不知道</td>
+                <td>写在 prompt 里只是建议，代码里没有闸门就等于没写（P3-2 已说过这条）</td>
               </tr>
               <tr>
-                <td><code>s12_task_system</code></td>
-                <td>多步骤任务的状态机：pending / in_progress / done / blocked，支持依赖</td>
-                <td>直接决定 W12 的 checkpoint schema 该怎么设计</td>
+                <td><b>工具规则</b></td>
+                <td>何时调、不重复查、报错先读懂、最多调几次</td>
+                <td>缺这层，模型会在同一件事上反复检索——这段是全场最省 token 的几行</td>
+              </tr>
+              <tr>
+                <td><b>输出要求</b></td>
+                <td>格式、引用写法、「不确定」怎么标</td>
+                <td>单独成段是为了改版式时不牵动前三段；并进身份里，一次改版式就让缓存全失效</td>
+              </tr>
+              <tr>
+                <td><b>当前环境</b></td>
+                <td>时间、语料文件数、本次可用工具</td>
+                <td><b>放到前面等于关掉缓存</b>：每轮都变，整段前缀作废</td>
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <div class="callout">
+          <b>这节的参考读法变了：现成例子藏在一个大节里，不在标题上</b>
+          <p>旧版有一节专讲 system prompt 组装，现在这版把它并掉了。真要找现成写法，去看 <code>s13_agent_teams</code> 里的 <code>PROMPT_SECTIONS</code>：一个 dict，最后 <code>"\n\n".join(PROMPT_SECTIONS.values())</code> 拼成 <code>SYSTEM</code>。它按「身份 / 工具清单 / 任务规则 / 团队规则 / 工作区」切段，动态部分（工作目录）排在最后——这两点可以直接借鉴。但<b>它没回答「哪几段必须排前面才吃得到缓存」</b>，那是你要自己补的判断。</p>
+          <p>判断标准也只能自己立：<b>eval 通过率不掉，且第二次请求的 <code>cached_tokens</code> 不为 0</b>。任务状态机那部分在 <code>s10_task_system</code>，W12 定 checkpoint schema 时再读。</p>
         </div>
 
         <h5>动手：改掉你的 SYSTEM 常量</h5>

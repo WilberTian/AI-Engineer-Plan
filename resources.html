@@ -285,9 +285,9 @@
         <tbody>
           <tr>
             <td><a href="https://github.com/shareAI-lab/learn-claude-code" target="_blank" rel="noopener"><b>learn-claude-code</b></a><br><span class="muted">公开仓库 · s01–s17</span></td>
-            <td><code>s01_agent_loop</code> → <code>s02_tool_use</code> → <code>s03_permission</code> → <code>s04_hooks</code> → <code>s05_todo_write</code> → <code>s06_subagent</code> → <code>s07_skill_loading</code> → <code>s08_context_compact</code> → <code>s09_memory</code> → <code>s10_system_prompt</code> → <code>s11_error_recovery</code> → <code>s12_task_system</code></td>
-            <td>W10–W11</td>
-            <td>harness 的每一层积木。每节一个 <code>code.py</code> + 中文 README，<b>这是最适合你的教材</b></td>
+            <td><code>s01_agent_loop</code> → <code>s02_tool_use</code> → <code>s03_permission</code> → <code>s04_hooks</code> → <code>s05_todo_write</code> → <code>s06_subagent</code> → <code>s07_skill_loading</code> → <code>s08_context_compact</code> → <code>s09_memory</code> → <code>s10_task_system</code> → <code>s11_background_tasks</code> → <code>s12_cron_scheduler</code></td>
+            <td>W10–W12</td>
+            <td>harness 的每一层积木。每节一个 <code>code.py</code> + README（中文在 <code>README.zh.md</code>），<b>这是最适合你的教材</b></td>
           </tr>
           <tr>
             <td><a href="https://github.com/shareAI-lab/claw0" target="_blank" rel="noopener"><b>claw0</b></a><br><span class="muted">公开仓库 · 10 节</span></td>
@@ -832,7 +832,7 @@ Mcp-Name: search
           </tr>
           <tr>
             <td><b>W11</b><br><span class="muted">P3</span></td>
-            <td><code>learn-claude-code</code> <b>s07–s09</b><br><span class="muted">三节，对应 P3-4 + P3-5</span></td>
+            <td><code>learn-claude-code</code> <b>s07–s09</b><br><span class="muted">三节，对应 P3-4</span></td>
             <td>仍然用四步法（P3-1），每节 30 分钟。<b>s08（compact）是本阶段最值钱的一节</b>，读的时候只找它的四个决策点：什么时候压、压哪一段、压成什么形式、哪些不许压</td>
             <td>能说出 s08 四个决策点各自的做法；能解释为什么「不可违反的规则」要抽出来不参与压缩</td>
           </tr>
@@ -875,7 +875,7 @@ Mcp-Name: search
       <p>整条线上，你<b>只精读一个</b>工业 harness（W12），其余都靠「读一节 + 对照自己」推进。这不是偷懒——<b>读三个 harness 的收益，远小于把一个读到能改</b>。面试官问「你读过哪个开源项目的源码」时，他想听的是你对某一段的判断，不是你去过几个仓库。</p>
     </div>
 
-    <h4 id="repomap">这两个仓库 27 节，你只需要读 14 节</h4>
+    <h4 id="repomap">这两个仓库 27 节，你只需要读 12 节</h4>
     <p class="lead">下表不给「读 / 不读」的判决，给<b>判据</b>：每行都写了「什么情况下该读」。你的产物里出现了那个故障，就反过来读它；没出现，读了也只是观光。<b>判据可以被反驳</b>——读到某一节时如果你发现它治的故障你其实也有，那就改这张表，这比照表执行多一层训练。</p>
 
     <div class="callout">
@@ -889,8 +889,10 @@ Mcp-Name: search
       <table class="compact">
         <thead><tr><th style="width:15%">learn-claude-code</th><th style="width:34%">它治哪种故障</th><th>什么情况下该读</th></tr></thead>
         <tbody>
-          <tr><td><code>s01–s12</code></td><td>harness 的十二层积木，每层堵一个具体故障</td><td><b>全读</b>。s01–s09 对应 P3-2 到 P3-5，s10–s12（任务 / 后台 / 定时）在 P3-7 落盘与长任务里用得上，产物是 <code>notes/harness.md</code>。没有跳过选项——每一层都对应你 harness 里的一个件</td></tr>
-          <tr><td><code>s13</code> teams</td><td>单 agent 干不完，要分工</td><td><b>不读</b>。见上面第 ② 条：读协议 ≠ 做产品。旧版单列的 worktree 已并进这节——单 agent「每个任务一个独立目录」那种用法，可以只挑那一段看</td></tr>
+          <tr><td><code>s01–s10</code></td><td>十层积木：loop / tool / permission / hooks / todo / subagent / skill / compact / memory / task</td><td><b>全读</b>。s01–s09 对应 P3-2 到 P3-5，s10（任务状态机）在 W12 定 checkpoint schema 时用，产物是 <code>notes/harness.md</code>。没有跳过选项——每一层都对应你 harness 里的一个件</td></tr>
+          <tr><td><code>s11</code> background</td><td>慢操作（下载、长命令）卡住主循环</td><td>你的工具里有超过 30 秒的调用才读。没有就跳过——后台线程是复杂度，不是必需品</td></tr>
+          <tr><td><code>s12</code> cron</td><td>没人问的时候自己跑（定时触发）</td><td><b>不读</b>。P3 的 harness 是被动响应，产物里没有「主动醒来」这个需求</td></tr>
+          <tr><td><code>s13</code> teams</td><td>单 agent 干不完，要分工</td><td><b>整体不读</b>。见上面第 ② 条：读协议 ≠ 做产品。但里面有两段可以单独挑出来：worktree（单 agent「每个任务一个独立目录」也用得上）和 <code>PROMPT_SECTIONS</code>（P3-5 要的分层组装例子）</td></tr>
           <tr><td><code>s14</code> mcp</td><td>工具要跨客户端复用，client 不该写死工具名</td><td><b>必读</b>（W13）。P3-9 写完对着看它怎么处理工具发现与生命周期</td></tr>
           <tr><td><code>s15</code> integrated</td><td>全部机制归到同一个 <code>while True</code></td><td>选读。当参考实现翻，只看主循环怎么调度，不必通读 3330 行</td></tr>
           <tr><td><code>s16</code> workflow</td><td>编排形状固定了，想把它落成代码 + 可续跑日志</td><td><b>不读</b>。你的 harness 是单轮任务循环，还没到「编排固定」那一步。真做多步工作流产品时再回来</td></tr>
@@ -916,7 +918,7 @@ Mcp-Name: search
       </table>
     </div>
 
-    <p class="muted">合计：<b>必读 14 节</b>（lcc s01–s12 + s14、claw0 s09）、<b>选读 4 节</b>（lcc s15、claw0 s03/s08/s10）、<b>不读 9 节</b>（lcc s13/s16/s17、claw0 s01/s02/s04/s05/s06/s07）。不读的那 9 节不是「不重要」，是它们治的故障你的产物里没有——<b>等你哪天真的遇到，再回来读，那时两小时能顶现在读十小时</b>。</p>
+    <p class="muted">合计：<b>必读 12 节</b>（lcc s01–s10 + s14、claw0 s09）、<b>选读 5 节</b>（lcc s11/s15、claw0 s03/s08/s10）、<b>不读 10 节</b>（lcc s12/s13/s16/s17、claw0 s01/s02/s04/s05/s06/s07）。不读的那 10 节不是「不重要」，是它们治的故障你的产物里没有——<b>等你哪天真的遇到，再回来读，那时两小时能顶现在读十小时</b>。</p>
 
     <h3 id="interview">5.10 面试怎么说（五句可直接用的）</h3>
     <p class="lead">这一段不是话术模板，是<b>把上面的判断压缩成能说出口的句子</b>。每句都要能接住追问。</p>

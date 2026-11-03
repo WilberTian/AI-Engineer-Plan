@@ -100,7 +100,7 @@
       <div class="ph-tag">P3 · Week 10–13</div>
       <h2>Agent 运行时：从「能跑一次」到「能跑很久」</h2>
       <p><b>目标：</b>把你的 loop 升级成 harness——能中断恢复、能压缩上下文、能审批危险动作、能被完整观测。</p>
-      <p>这一阶段你不需要从零发明任何东西：本地 <code>repos/learn-claude-code</code>（s01–s20）和 <code>repos/claw0</code>（10 节）已经把这些拆成了可读的积木。<b>你的任务是读懂、删减、并说清为什么删。</b>三十节里只有 14 节必读——哪节读、哪节跳过、凭什么判断，在 <a href="resources.html#repomap">资源库 §5.9 末的判据表</a>。</p>
+      <p>这一阶段你不需要从零发明任何东西：<a href="https://github.com/shareAI-lab/learn-claude-code" target="_blank" rel="noopener">learn-claude-code</a>（17 节）和 <a href="https://github.com/shareAI-lab/claw0" target="_blank" rel="noopener">claw0</a>（10 节）两个公开仓库已经把这些拆成了可读的积木——<code>git clone</code> 下来即可，不需要申请或付费。<b>你的任务是读懂、删减、并说清为什么删。</b>二十七节里只有 14 节必读——哪节读、哪节跳过、凭什么判断，在 <a href="resources.html#repomap">资源库 §5.9 末的判据表</a>。</p>
       <div class="deliv">
         <span>可恢复的 harness</span>
         <span>压缩策略对照表</span>
@@ -118,9 +118,9 @@
           <thead><tr><th style="width:52px">周</th><th style="width:15%">主题</th><th>必看</th><th style="width:29%">选看</th></tr></thead>
           <tbody>
             <tr><td><b>W10</b></td><td>读 harness</td><td><code>learn-claude-code</code> <b>s01–s06</b>；12-Factor Agents 前 6 条</td><td><code>claw0</code> s01–s02（与 lcc 重叠，跳过不影响）</td></tr>
-            <tr><td><b>W11</b></td><td>上下文与恢复</td><td><code>learn-claude-code</code> <b>s07–s12</b>（六节，对应 P3-4 + P3-5）；Effective context engineering</td><td>Claude cookbook 的 compaction notebook</td></tr>
-            <tr><td><b>W12</b></td><td>持久化</td><td>12-Factor 的 launch-pause-resume</td><td><code>claw0</code> s03（JSONL 落盘与重放）、s08 投递；LangGraph checkpoint 源码</td></tr>
-            <tr><td><b>W13</b></td><td>MCP + trace</td><td>modelcontextprotocol.io；python-sdk；<code>learn-claude-code</code> <b>s19</b>（工具发现与组装）；Langfuse 自托管文档</td><td>DeepLearning.AI 的 MCP 短课</td></tr>
+            <tr><td><b>W11</b></td><td>上下文与恢复</td><td><code>learn-claude-code</code> <b>s07–s09</b>（skill / compact / memory，对应 P3-4 + P3-5）；Effective context engineering</td><td>Claude cookbook 的 compaction notebook</td></tr>
+            <tr><td><b>W12</b></td><td>持久化</td><td>12-Factor 的 launch-pause-resume；<code>learn-claude-code</code> s10（任务落盘）</td><td><code>claw0</code> s03（JSONL 落盘与重放）、s08 投递；LangGraph checkpoint 源码</td></tr>
+            <tr><td><b>W13</b></td><td>MCP + trace</td><td>modelcontextprotocol.io；python-sdk；<code>learn-claude-code</code> <b>s14</b>（工具发现与组装）；Langfuse 自托管文档</td><td>DeepLearning.AI 的 MCP 短课</td></tr>
           </tbody>
         </table>
       </div>
@@ -150,7 +150,7 @@
 
     <div class="callout">
       <b>先看清这两个仓库是什么</b>
-      <p><code>learn-claude-code</code>：s01–s20，每节一个 <code>code.py</code> + 中文 README，从 loop 一路到 agent teams / worktree / MCP。<b>教学向</b>，代码短、概念清晰，适合「逐节对照自己的实现」。<br>
+      <p><code>learn-claude-code</code>：s01–s17，每节一个 <code>code.py</code> + 英文 README（中文在 <code>README.zh.md</code>），从 loop 一路到 agent teams / MCP / 综合 harness。<b>教学向</b>，代码短、概念清晰，适合「逐节对照自己的实现」。<br>
       <code>claw0</code>：10 节，每节一个可运行 Python 文件，从 loop 走到 gateway（sessions / channels / routing / heartbeat / delivery queue / 重试洋葱 / 并发）。<b>生产向</b>，适合看「真实的工程约束长什么样」。<br>
       <code>claw0</code> 的中文文档在 <code>sessions/zh/</code>。</p>
     </div>
@@ -882,8 +882,8 @@ asyncio.run(main())</code></pre>
           </li>
         </ol>
 
-        <div class="callout"><b>写完对着 s19 看一遍</b>
-          <p><code>repos/learn-claude-code/s19_mcp_plugin</code>（1026 行）做的是同一件事，但多了一层你要抄的东西：<b>工具发现</b>——工具不是硬编码在 client 里，而是运行时问 server「你有哪些工具」。你把检索包成 MCP 之后，如果 client 那边还要写死工具名，等于没解耦。看它怎么处理工具列表的生命周期，再看你的实现缺哪一步。</p>
+        <div class="callout"><b>写完对着 s14 看一遍</b>
+          <p><code>learn-claude-code</code> 仓库的 <code>s14_mcp_plugin</code>（551 行）做的是同一件事，但多了一层你要抄的东西：<b>工具发现</b>——工具不是硬编码在 client 里，而是运行时问 server「你有哪些工具」。你把检索包成 MCP 之后，如果 client 那边还要写死工具名，等于没解耦。看它怎么处理工具列表的生命周期，再看你的实现缺哪一步。</p>
         </div>
 
         <div class="out"><b>产物</b><code>src/agentlab/mcp_server.py</code> + <code>scripts/test_mcp.py</code> + 客户端调用成功的截图或日志</div>

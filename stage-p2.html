@@ -54,7 +54,7 @@
     <h4>本页目录</h4>
     <h4 class="grp">开始之前</h4>
     <nav>
-      <a href="#concepts">要懂的 11 个概念</a>
+      <a href="#concepts">要懂的 14 个概念</a>
     </nav>
     <h4 class="grp">W06 · 解析与入库</h4>
     <nav>
@@ -119,15 +119,15 @@
         <table class="compact">
           <thead><tr><th style="width:52px">周</th><th style="width:15%">主题</th><th>必看</th><th style="width:29%">选看</th></tr></thead>
           <tbody>
-            <tr><td><b>W06</b></td><td>解析分块</td><td>Docling / Chonkie 文档；pgvector README</td><td>HF Unit 3 agentic RAG</td></tr>
-            <tr><td><b>W07</b></td><td>混合检索</td><td>RRF 原论文（十分钟）；bge-m3 模型卡</td><td>Qdrant 混合检索教程</td></tr>
+            <tr><td><b>W06</b></td><td>解析分块</td><td>Docling / Chonkie 文档；pgvector README；MTEB 榜的 CMTEB 分段（只看中文那几张表）</td><td>HF Unit 3 agentic RAG</td></tr>
+            <tr><td><b>W07</b></td><td>混合检索</td><td>RRF 原论文（十分钟）；bge-m3 模型卡</td><td>Qdrant 混合检索教程；HyDE 原论文（选学）</td></tr>
             <tr><td><b>W08</b></td><td>生成侧</td><td>引用与拒答的实践文章；OWASP 的「过度代理」条目</td><td>Claude cookbook 的 citation 示例</td></tr>
             <tr><td><b>W09</b></td><td>eval v2 + 记忆</td><td>RAGAS 指标定义（读文档不是读代码）；书第 3 章 §用户记忆系统</td><td>inspect_ai 的实验设计</td></tr>
           </tbody>
         </table>
       </div>
     </div>
-    <h2 id="concepts">开始之前：这一阶段要懂的 11 个概念</h2>
+    <h2 id="concepts">开始之前：这一阶段要懂的 14 个概念</h2>
 
     <p class="lead">这一页不只有动手。下面每张卡都会用到这几个心智模型——<b>概念先立住，命令才不是照抄</b>；概念没立住，改一行代码就不知道会牵动哪里。</p>
 
@@ -137,10 +137,13 @@
         <tbody>
           <tr><td><b>分块是检索精度的上限</b></td><td>块切错了，后面的 embedding、rerank、prompt 全都救不回来</td><td>检索只能返回“已经存在的块”；边界切错的答案永远补不回来，这是唯一一个必须在第一步就做对的环节</td><td><a href="#p2-1">P2-1</a> · <a href="#p2-3">P2-3</a></td></tr>
           <tr><td><b>结构感知分块</b></td><td>按标题切，并把标题路径拼进块文本，让每块自带上下文</td><td>否则“该值”“它的上限”这类指代脱离标题就无法解析；检索到了，模型也答不对</td><td><a href="#p2-2">P2-2</a> · <a href="#p2-3">P2-3</a></td></tr>
+          <tr><td><b>选模型决定表结构</b></td><td>中文效果、维度换来的内存与延迟、换模型的返工成本，三者互相拉扯</td><td>榜上第一不等于你语料上最好，而且换维度就得重建整张表；所以要先在 20 条 query 上量出基线再定，定完别再动</td><td><a href="#p2-4">P2-4</a></td></tr>
           <tr><td><b>稠密 vs 稀疏</b></td><td>embedding 管语义相近，BM25 管词面精确，两者的失败方式正好相反</td><td>向量检索对专有名词、型号、错误码几乎必漏——这就是要混合检索的全部理由</td><td><a href="#p2-6">P2-6</a></td></tr>
+          <tr><td><b>关键词索引不能真增量</b></td><td>向量可以按 id 增量 upsert，BM25 的 IDF 依赖全库统计，只能重编</td><td>增量插一条会让所有旧分数漂移；下线更危险——只删向量不重编索引，会留下「向量查不到、关键词还召回」的幽灵文档，而且不报错</td><td><a href="#p2-6">P2-6</a></td></tr>
           <tr><td><b>recall@k 是唯一硬指标</b></td><td>前 k 条里有没有正确文档，直接决定生成侧的天花板</td><td>没进前 5 的文档，再好的 prompt 也生成不出来；先量召回，再谈别的，顺序不能反</td><td><a href="#p2-5">P2-5</a></td></tr>
           <tr><td><b>RRF 用排名不用分数</b></td><td>两路检索的分数不同量纲，只能按名次融合</td><td>加权平均要先归一化两路分数、还要调权重，换语料就得重调；RRF 只看名次，不需要归一化</td><td><a href="#p2-7">P2-7</a></td></tr>
           <tr><td><b>rerank 是贵但准的第二层</b></td><td>cross-encoder 把 query 和文档拼一起过一遍模型，只对 20–30 条候选做</td><td>它对全库做不起（成本与延迟都是 O(N)），只能当精排用；候选超过 50 条时 CPU 上单次要几秒，得先砍候选</td><td><a href="#p2-8">P2-8</a></td></tr>
+          <tr><td><b>改写要用 eval 证伪</b></td><td>术语归一 / HyDE / 查询分解，三档成本差两个量级</td><td>改写是唯一「越努力越容易变坏」的一层：召回升、精度常降；判断依据是最终答案正确率，不是 recall@5 单项涨了</td><td><a href="#p2-8">P2-8</a></td></tr>
           <tr><td><b>拒答要两层</b></td><td>检索侧阈值（最高分低于阈值直接拒）+ 生成侧指令（资料不足就说不知道）</td><td>只靠 prompt 不可靠，只靠阈值会误杀可答问题；两层缺一层都有洞</td><td><a href="#p2-10">P2-10</a></td></tr>
           <tr><td><b>权限必须在检索前过滤</b></td><td>把租户/文档权限写进查询条件，而不是检索出 10 条再筛掉没权限的</td><td>先检索后过滤，会让“有权限的文档一条都没进前 10”，模型于是拒答或者编造</td><td><a href="#p2-11">P2-11</a></td></tr>
           <tr><td><b>引用让答案可验证</b></td><td>每句结论挂回原文块，能点击回原文</td><td>没有引用，「答案对不对」只能靠感觉；面试问「怎么证明它没编」，答的就是引用和拒答这两层</td><td><a href="#p2-9">P2-9</a></td></tr>
@@ -473,7 +476,7 @@ def chunk_file(path: Path, strategy: str = "structural") -&gt; list[Chunk]:
       <summary>
         <span class="tid">P2-4</span>
         <span class="tname">pgvector 入库：schema 比代码重要</span>
-        <span class="tmin">周六 1.5h</span>
+        <span class="tmin">周六 2h</span>
       </summary>
       <div class="task-body">
         <div class="why"><b>为什么</b>：选 pgvector 不是因为最强，是因为你已经有 Postgres 的心智模型，而且<b>元数据过滤、事务、迁移</b>这些你熟。等真的撞上性能天花板再换 Qdrant，那时你能说清为什么换。</div>
@@ -487,6 +490,29 @@ def chunk_file(path: Path, strategy: str = "structural") -&gt; list[Chunk]:
           </ul>
         </div>
 
+
+        <h5>先定模型，再建表：bge-m3 和 1024 维是怎么定下来的</h5>
+        <p>上一段说「换模型 = 换表」，所以这张表上最贵的决策不是列名，是<b>用哪个 embedding</b>。选型被三个约束同时夹住：<b>中文效果</b>、<b>维度换来的内存与延迟</b>、<b>换一次模型的返工成本</b>。没有「最强模型」这回事。</p>
+        <ul>
+          <li><b>会看榜，但别用榜做决定。</b> MTEB 是英文主榜，中文要看 CMTEB 那一段（bge-m3、gte、Conan-embedding 这一批都在上面）。<b>榜上差两三个点，落到你自己那 240 页语料上，往往不如「切分改一版」的差距大。</b>真正的选型证据在 P2-5：同一批 20 条 query，只换 embedding、其它不动，量 recall@5 与 MRR，谁高用谁。</li>
+          <li><b>维度是直接换钱的。</b> float32 下一条向量占 4×维度 字节：1024 维约 4KB/块，100 万块就是 4GB 常驻内存，HNSW 还要再叠一层索引开销。几百页语料只有几千块，维度随便用；<b>块数上到百万级，维度才成为第一约束</b>——只有三千块的时候别纠结 768 还是 1024。</li>
+          <li><b>两个压缩手段，别当成一回事。</b> <code>halfvec</code>（fp16）省一半内存、召回通常掉不到一个点，pgvector 0.7+ 就有；Matryoshka 截断能把 1024 砍到 512，但<b>只有按 MRL 训练的模型才支持</b>——bge-m3 不是，硬截没有保证；要截就换模型，且截断后必须重新归一化。</li>
+        </ul>
+
+<pre><code>-- 确定要省内存才换 halfvec：省一半，代价是写入时要显式转换
+ALTER TABLE chunks
+  ALTER COLUMN embedding TYPE halfvec(1024)
+  USING embedding::halfvec(1024);
+
+-- 索引的 opclass 必须跟着换，否则索引建不上（这一步最容易忘）
+DROP INDEX IF EXISTS chunks_emb_idx;
+CREATE INDEX chunks_emb_idx ON chunks
+  USING hnsw (embedding halfvec_cosine_ops) WITH (m = 16, ef_construction = 64);</code></pre>
+
+        <div class="callout">
+          <b>换模型时别原地改表</b>
+          <p>正确顺序是：<b>先加一列 <code>embedding_v2</code>（或建新表）→ 全量重跑 embedding → 两套并行喂同一批 query → recall@5、MRR、延迟都赢了再切读路径</b>。原地 <code>ALTER COLUMN TYPE</code> 换维度会直接报错，同维度则会静默失真——<b>静默失真比报错难查得多</b>。这条和 P2-5 是同一件事：没有基线就没有「更好」。</p>
+        </div>
 
         <h5>起库</h5>
 <pre><code><span class="cmt"># docker-compose.yml</span>
@@ -725,7 +751,7 @@ if __name__ == "__main__":
       <summary>
         <span class="tid">P2-6</span>
         <span class="tname">关键词检索：为什么向量检索一定会漏掉专有名词</span>
-        <span class="tmin">周六 1.5h</span>
+        <span class="tmin">周六 2h</span>
       </summary>
       <div class="task-body">
         <div class="why"><b>为什么</b>：embedding 把语义压成向量，副作用是<b>罕见字符串被平滑掉</b>。产品型号「XR-2000B」、函数名「useSyncExternalStore」、错误码「E1024」，向量检索经常找不准；而这些恰恰是用户最常精确查的东西。</div>
@@ -789,6 +815,66 @@ def search(query: str, k: int = 20) -&gt; list[tuple[str, float]]:
     scores = data["bm25"].get_scores(tokenize(query))
     order = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:k]
     return [(data["ids"][i], float(scores[i])) for i in order]</code></pre>
+
+        <h5>文档会变：增量重编与下线</h5>
+        <p>上面那两行注释说 BM25 只能整库重建，但真实语料每天都在变：新增、改版、下线。几百页全量重建要几分钟，不可能每次改动都跑。三条路，按块数规模选：</p>
+        <div class="tw wide">
+          <table>
+            <thead><tr><th style="width:132px">做法</th><th>怎么实现</th><th>代价 / 风险</th><th style="width:180px">什么时候够用</th></tr></thead>
+            <tbody>
+              <tr><td>全量重建</td><td>每次变更都跑一遍 <code>build()</code></td><td>简单、分数永远自洽；一次几分钟</td><td>块数 &lt; 5000，一天只改几次</td></tr>
+              <tr><td>增量追加 + 定期重编</td><td>新块塞进小索引叠加查询，每天或每周全量重编一次</td><td>两次重编之间 <b>IDF 会漂移</b>，老文档的分数慢慢失真</td><td>每天改动多，能接受分数短期不准</td></tr>
+              <tr><td>双索引切换</td><td>重建到 <code>bm25.new.pkl</code>，建完原子换文件名指针</td><td>多一份磁盘和一次全量计算；切换瞬间不能有查询</td><td>一次重建要十几分钟以上</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+<pre><code>"""scripts/sync_docs.py — 单篇增删改，跑几次结果都一样（幂等）"""
+from __future__ import annotations
+
+from pathlib import Path
+
+import psycopg
+from pgvector.psycopg import register_vector
+from sentence_transformers import SentenceTransformer
+
+from agentlab.rag.chunk import chunk_file
+
+MODEL = "BAAI/bge-m3"
+
+
+def sync_doc(cur, model, path: Path) -&gt; int:
+    doc_id = path.stem
+    chunks = chunk_file(path, "structural")
+    # id 沿用 chunk_file 的序号型 id（doc#s0、doc#s1…）：
+    # 同一版内容重跑 → id 不变 → upsert 是空操作；改版 → 同 id 覆盖，不留旧行
+    keep = [c.id for c in chunks]
+    # 这一步处理「改版后块变少」：不在 keep 里的旧块必须删掉，
+    # 否则它们会作为上一版残留继续被检索到
+    cur.execute("DELETE FROM chunks WHERE doc_id = %s AND NOT (id = ANY(%s))", (doc_id, keep))
+    vecs = model.encode([c.text for c in chunks], batch_size=32, normalize_embeddings=True)
+    cur.executemany(
+        """INSERT INTO chunks (id, doc_id, doc_title, section, strategy, content, embedding)
+           VALUES (%s,%s,%s,%s,'structural',%s,%s)
+           ON CONFLICT (id) DO UPDATE SET content   = EXCLUDED.content,
+                                          embedding = EXCLUDED.embedding,
+                                          doc_title = EXCLUDED.doc_title""",
+        [(c.id, doc_id, path.stem, c.section, c.text, v)
+         for c, v in zip(chunks, vecs, strict=True)],
+    )
+    return len(chunks)
+
+
+def retire(cur, doc_id: str) -&gt; None:
+    # 下线只有一半在库里：bm25.pkl 是另一个文件，删完必须重跑 build()
+    cur.execute("DELETE FROM chunks WHERE doc_id = %s", (doc_id,))</code></pre>
+
+        <div class="callout warn">
+          <b>最容易出的静默错误：只删一边</b>
+          <p>只删数据库里的向量、不重跑 <code>build()</code>，那篇文档就变成<b>幽灵</b>——语义那一路查不到它，关键词那一路还能把它捞回来；随后 <code>_fetch</code> 按 id 回库查不到，又把它静默丢掉。表现是「检索只返回 3 条，但一条报错都没有」。<b>下线的验收就一条断言</b>：删掉一篇文档后，20 条 query 里一条都不能再出现它的 chunk id。这条能进 eval，别靠眼睛看。</p>
+        </div>
+
+        <p class="muted"><b>块 id 用序号还是内容 hash，这里是唯一需要你拍板的地方</b>：序号型（上面这段用的，<code>doc#s0</code>）改版时同 id 覆盖，简单；内容 hash 型（<code>sha1(doc_id + text)</code>）能让没改动的块 id 保持不变，增量更细，但改一个标点就换 id，旧行全靠 <code>DELETE</code> 清。两种都行，<b>别混用</b>——混用会让同一份文档在库里出现两套 id，检索时同一段内容命中两次。</p>
 
         <h5>做一个能证明差异的实验</h5>
         <p>在语料里找一个<b>专有名词或错误码</b>，用纯向量检索和纯 BM25 分别查，对比前 5 名里有没有命中。把两条结果并排贴进笔记。</p>
@@ -903,7 +989,7 @@ if __name__ == "__main__":
       <summary>
         <span class="tid">P2-8</span>
         <span class="tname">交叉编码器重排：算清它值不值这个延迟</span>
-        <span class="tmin">周六 2h</span>
+        <span class="tmin">周六 2.5h</span>
       </summary>
       <div class="task-body">
         <div class="why"><b>为什么</b>：重排是「双塔（快但粗）→ 交叉编码器（慢但准）」的标准组合。它<b>不能提高召回</b>——只重排已经找到的候选。这个边界必须说清楚，否则你会以为它能救低召回。</div>
@@ -1047,6 +1133,72 @@ def hybrid_retrieve(query: str, top_k: int = 5, strategy: str = "structural",
             id=cid, text=text, source=source, section=section, score=float(score),
         ))
     return out</code></pre>
+
+        <h5>入口之前还有一层：查询改写</h5>
+        <p>如果进来的 query 本身就是残的，RRF 和 rerank 只是在给错的东西排序。改写有三档，成本差两个量级，<b>别一上来就调模型</b>：</p>
+        <div class="tw wide">
+          <table>
+            <thead><tr><th style="width:110px">改写</th><th>做什么</th><th style="width:150px">代价</th><th>典型失败</th></tr></thead>
+            <tbody>
+              <tr><td>术语归一</td><td>把用户用词换成语料用词（「退钱」→「退款」，<code>500</code> → <code>Internal Server Error</code>），一张 alias 表就够</td><td>零成本，纯字符串</td><td>alias 表是自己拍的，会把本来正确的查询改坏</td></tr>
+              <tr><td>HyDE</td><td>让模型先写一段「假答案」，用它的向量去检索</td><td>一次额外生成，几百毫秒起</td><td>假答案把人带偏：问的是 A，模型写的是 B，召回全是 B</td></tr>
+              <tr><td>查询分解</td><td>多跳问题拆成子查询，各自检索后去重合并</td><td>一次小模型调用，或一条正则</td><td>每个子查询各自「答得挺好」，合起来却漏掉真正的答案</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+<pre><code>"""src/agentlab/rag/rewrite.py — 三种改写，每一种都要能被 eval 证伪"""
+from __future__ import annotations
+
+import re
+
+
+def normalize_terms(query: str, alias: dict[str, str]) -&gt; str:
+    # 最便宜的一层：先做它，证明它没坏处再考虑下面两个
+    for k, v in alias.items():
+        query = query.replace(k, v)
+    return query
+
+
+def decompose(query: str) -&gt; list[str]:
+    """多跳问题拆成子查询；拆不出来就原样返回一条。
+
+    「和 / 与 / 同时 / 分别」是问句里最强的并列信号，不用模型也能拆掉一部分；
+    「A 的 B 是谁的上司」这种嵌套关系才需要一次小模型调用。
+    """
+    parts = [p.strip(" ？?") for p in re.split(r"和|与|同时|分别", query)]
+    return [p for p in parts if len(p) &gt;= 4] or [query]
+
+
+def hyde(query: str, llm) -&gt; str:
+    """先让模型写一句假答案，再用「问题 + 假答案」去检索。
+
+    适合短、口语化、和语料用词差得远的查询。
+    它只用来扩大候选池，不单独作为检索结果——假答案错了会一路错下去。
+    """
+    fake = llm(f"用一句陈述句回答，不要解释：{query}")
+    return f"{query}\n{fake}"
+
+
+def multi_retrieve(query: str, retrieve, k: int = 5) -&gt; list:
+    """子查询各取 k 条，按 id 去重；要按名次融合就交给 P2-7 的 RRF。
+
+    不要把子查询结果拼成一段长文本再检一次：拼接会稀释每段的权重，
+    长度还会撞上 embedding 的 max_tokens。
+    """
+    seen: set[str] = set()
+    out: list = []
+    for sub in decompose(query):
+        for hit in retrieve(sub, top_k=k):
+            if hit.id not in seen:
+                seen.add(hit.id)
+                out.append(hit)
+    return out</code></pre>
+
+        <div class="callout">
+          <b>改写的收益必须用数证明，而且不能只看 recall</b>
+          <p>拿 P2-5 那 20 条 query 跑两遍（改写前 / 改写后），同时记三个数：<b>recall@5、MRR、最终答案正确率</b>。改写最常见的副作用是<b>召回升、精度降</b>——多召回两条不相关的块，把真正那条挤出 top 5；所以「recall 涨了但答案正确率掉了」说明这一层不该开。<br>还有三种情况直接不做：<b>① 事实型短查询</b>（「XR-2000B 的重量」），术语本来就对齐；<b>② 首字延迟预算小于 500ms</b>，HyDE 的一次生成就把预算吃光；<b>③ 手上没有 eval 集</b>——没有基线时，「感觉变好了」全是自欺。多跳的验收在 P2-12 有对应的 <code>multi_hop</code> 题型，别自己另造一套。</p>
+        </div>
 
         <h5>必须量三个数（不是两个）</h5>
         <div class="tw">

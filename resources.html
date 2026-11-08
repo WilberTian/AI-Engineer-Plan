@@ -1034,10 +1034,22 @@ Mcp-Name: search
             <td><b>不同 BGE 版本对 query 前缀要求不同</b>（有的要加「为这个句子生成表示…」，M3 不需要）。用前查模型卡，别照抄旧教程</td>
           </tr>
           <tr>
+            <td><b>MTEB / CMTEB 榜</b><br><span class="muted">HuggingFace Spaces</span></td>
+            <td>embedding 模型排行，中文看 CMTEB 那一段</td>
+            <td>W06</td>
+            <td>榜是<b>别人语料上的分数</b>，只用来筛候选。定下来之前必须在自己那 20 条 query 上量 recall@5/MRR——榜单第一在你语料上输给第三是常事</td>
+          </tr>
+          <tr>
             <td><b>bge-reranker-v2-m3</b></td>
             <td>交叉编码器重排</td>
             <td>W07</td>
             <td>CPU 上重排 30 条约 200–800ms。候选别超过 50，<code>max_length</code> 压到 512</td>
+          </tr>
+          <tr>
+            <td><b>HyDE 原论文</b><br><span class="muted">Precise Zero-Shot Dense Retrieval</span></td>
+            <td>先让模型写一段假答案，再用它去检索</td>
+            <td>W07（选学）</td>
+            <td>它只扩大候选池、<b>不能单独当作检索结果</b>：假答案猜错会把召回整段带偏。加了它要看最终答案正确率，不是看 recall@5 涨没涨</td>
           </tr>
           <tr>
             <td><a href="https://github.com/dorianbrown/rank_bm25">rank_bm25</a></td>

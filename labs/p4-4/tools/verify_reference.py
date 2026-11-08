@@ -2,8 +2,8 @@
 
     python3 labs/p4-4/tools/verify_reference.py
 
-2026-11-02：15 条全绿。此前 5 条红色（前缀绕过、内网理由、开标签、大小写变体、source 注入）
-都是真漏洞，已改正文代码修掉，修法见 NOTES §2。
+15 条全绿。这 5 类写法（前缀绕过、内网理由、开标签、大小写变体、source 注入）
+最容易被顺手「简化」掉，退回任何一条都会立刻变红，逐条修法见 NOTES §2。
 """
 from __future__ import annotations
 

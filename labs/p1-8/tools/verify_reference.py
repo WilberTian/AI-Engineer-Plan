@@ -9,12 +9,12 @@
 
 参考实现目前是**全绿**的（11/11）。
 
-Fix 记录（2026-10-31）：原先 `create(model=..., messages=[], **kwargs)` 把 `messages`
-写成固定参数，而五次探测又都传了 `messages=...`，于是五次全部变成
-`TypeError: got multiple values for keyword argument 'messages'`，一次都没真正调到 SDK。
-现已改为 `kwargs.setdefault("messages", [])` + `kwargs.setdefault("model", PRIMARY.model)`，
-默认值在函数里给、调用方传了就以调用方为准。这段教训留在
-`stage-p1.html#p1-8` 的代码注释里，别再改回去。
+最容易写错的一处：`create(model=..., messages=[], **kwargs)` 把 `messages` 写成固定参数，
+而五次探测又都传了 `messages=...`，于是五次全部变成
+`TypeError: got multiple values for keyword argument 'messages'`——一次都没真正调到 SDK，
+判据却可能照样绿。正确写法是 `kwargs.setdefault("messages", [])` +
+`kwargs.setdefault("model", PRIMARY.model)`：默认值在函数里给，调用方传了就以调用方为准。
+正文 `stage-p1.html#p1-8` 的代码注释里也标了这一处。
 """
 from __future__ import annotations
 

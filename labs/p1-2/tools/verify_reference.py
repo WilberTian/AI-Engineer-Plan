@@ -23,11 +23,9 @@ from htmlcode import REPO, block, sha  # noqa: E402
 RUN_CHECKS = LAB / "harness" / "run_checks.py"
 CARD, IDX = "p1-2", 0
 
-# 手册 p1-2 参考实现的已知偏差。修好之后这里应该清空。
-KNOWN_DEVIATIONS = {
-    "citations 不传也受同一规则约束",   # field_validator 不校默认值 → 规则整条失效
-    "refused=True 时无引用应通过",      # info.data 里没有 refused（字段顺序）→ 误杀合法数据
-}
+# 参考实现的已知偏差。正文与判据一致时这里为空；一旦非空，说明手册那段代码
+# 过不了自己写的验收标准。
+KNOWN_DEVIATIONS: set[str] = set()
 
 RED_LINE = re.compile(r"^\s*\d+\s+(FAIL|ERR)\s+(.+?)(?:\s{3,}.*)?$", re.M)
 
@@ -61,15 +59,17 @@ def main() -> int:
 
     print("-" * 74)
     if not unknown and not fixed:
-        print(f"结果符合预期：失败的恰好是 NOTES §4 记录的 {len(KNOWN_DEVIATIONS)} 条已知偏差。")
-        print("这两个洞是故意留着的——它们正是这张卡要你自己想清楚的地方。")
+        if KNOWN_DEVIATIONS:
+            print(f"结果符合预期：失败的恰好是记录在案的 {len(KNOWN_DEVIATIONS)} 条已知偏差。")
+        else:
+            print("结果符合预期：参考实现满足全部判据，没有已知偏差。")
         return 0
     if unknown:
         print(f"× 出现未记录的失败：{sorted(unknown)}")
         print("  手册改过、或判分规则本身有问题，去核对再更新 NOTES。")
     if fixed:
         print(f"! 已知偏差里这些不再失败了：{sorted(fixed)}")
-        print("  说明手册已修好 → 把它们从 KNOWN_DEVIATIONS 删掉，并把 NOTES §4 改成「已修」。")
+        print("  说明正文已改 → 把它们从 KNOWN_DEVIATIONS 删掉，并同步 NOTES §4 的复现记录。")
     return 1
 
 

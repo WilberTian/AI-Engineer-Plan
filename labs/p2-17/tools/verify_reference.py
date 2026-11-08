@@ -15,7 +15,7 @@ LAB = HERE.parent
 sys.path.insert(0, str(LAB.parent / "_shared"))
 from refkit import verify_reference  # noqa: E402
 
-KNOWN_RED: list[str] = []   # 中文召回已改成字二元组匹配（2026-11-02）
+KNOWN_RED: list[str] = []   # 中文召回用字二元组匹配
 
 
 def build(tmp: Path, code: str) -> None:

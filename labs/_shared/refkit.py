@@ -64,7 +64,7 @@ def verify_reference(
     参考实现不存副本：手册改了这里立刻跟着变，红了就是手册和 CONTRACT 对不上。
 
     expect_red：参考实现**自己没达到** CONTRACT 的检查名。不是放水——是把
-    「手册这段代码有问题」显式标出来，修好后这里会提示删掉对应条目。
+    「正文这段代码没达标」显式标出来，正文改好后这里会提示删掉对应条目。
     """
     code = _baseline(page, card, idx, combine)
     with tempfile.TemporaryDirectory(prefix=f"{card}-ref-") as tmp:
@@ -86,7 +86,7 @@ def verify_reference(
         print()
         print(f"已知偏差：{len(expect_red)} 条，命中 {len(got)} 条")
         for n in expect_red:
-            mark = "命中" if n in got else "未命中 ← 手册可能已修好，删掉这条"
+            mark = "命中" if n in got else "未命中 ← 正文已不触发，删掉这条"
             print(f"  [{mark}] {n}")
         if extra:
             print()

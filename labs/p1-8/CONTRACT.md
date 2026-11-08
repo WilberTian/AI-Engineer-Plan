@@ -40,15 +40,14 @@ scripts/error_probe.py     探测五种错误，统一只打三样
   （供应商改文案就漂）。这一步**必须人工做一次**，判分器替代不了。
 - **HTTP 状态码映射**：401/429/500 各对应什么动作，是你写进 P4 容错表的结论。
 
-## §3.5 边界：这 6 条曾经全红（已修，现在 11/11）
+## §3.5 边界：这 6 条专门防「断言空转」
 
-`probe()` 里 `messages=[]` 写成了固定参数，而五次探测都传 `messages=...`，
-于是五次全部变成 `TypeError: got multiple values for keyword argument`——
-**一次都没真正调到 SDK**。第 1、5、8、9、10、11 条抓的就是这个，
-修法见 `NOTES.md` §1（一处 `kwargs.setdefault("messages", [])`）。
+`probe()` 里要是把 `messages=[]` 写成固定参数，而五次探测都又传 `messages=...`，
+五次就全部变成 `TypeError: got multiple values for keyword argument`——**一次都没真正调到 SDK**。
+第 1、5、8、9、10、11 条抓的就是这个，修法见 `NOTES.md` §1（一处 `kwargs.setdefault("messages", [])`）。
 
-有意思的是第 2、3、4、6、7 条仍然绿：**格式全对，内容全一样。**
-这正是「只判格式的判据不够」的现场例子。
+注意这时第 2、3、4、6、7 条仍然绿：**格式全对，内容全一样。**
+这正是「只判格式的判据不够」的现场例子——所以这 6 条必须单独存在。
 
 ## §4 你的自由
 

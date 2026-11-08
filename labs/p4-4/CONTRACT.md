@@ -73,9 +73,9 @@ python3 labs/p4-4/harness/run_checks.py --target ~/code/agentlab-project
 
 判分在临时目录里跑，会建 `data/ notes/ data-evil/` 三个目录——`data-evil` 就是为了验第 4 条。
 
-## §6 边界：参考实现本身有 5 条红
+## §6 五个最容易抄回去的错
 
-这不是判分器写严了，是手册那段代码**真的漏了**。五条逐条核对过，修法见 NOTES §2：
+这不是判分器写严了，是下面这几种写法**看着对、实际漏**：
 
 1. 路径前缀绕过（`startswith` 不带分隔符）
 2. 内网 IP 的拒绝理由被 `except ValueError` 吞掉
@@ -83,4 +83,5 @@ python3 labs/p4-4/harness/run_checks.py --target ~/code/agentlab-project
 4. 大写 `</UNTRUSTED>` 没转义
 5. `source` 没转义，可以注入属性
 
-`tools/verify_reference.py` 用 `KNOWN_RED` 记录这 5 条，**不是放水**：手册修好后它会提示删掉对应条目。
+每条的实测现场与修法见 `NOTES.md §2`。照着正文写的时候只要「简化」掉其中任何一处，
+对应的判据就会立刻变红——它们就是为这 5 种写法准备的。

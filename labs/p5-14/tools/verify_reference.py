@@ -70,7 +70,7 @@ def main() -> int:
     print()
     print(f"已知偏差：{len(KNOWN_RED)} 条，命中 {len(got)} 条")
     for n in KNOWN_RED:
-        mark = "命中" if n in got else "未命中 ← 手册可能已修好，删掉这条"
+        mark = "命中" if n in got else "未命中 ← 正文已不触发，删掉这条"
         print(f"  [{mark}] {n}")
     if extra:
         print()

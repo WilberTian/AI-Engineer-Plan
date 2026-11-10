@@ -1079,12 +1079,15 @@ def log_step(name: str, payload: dict, usage: dict | None = None) -&gt; None:
             <tbody>
               <tr><td>每轮的完整 messages</td><td>定位「模型看到的是不是我以为的」</td><td>span 的 input</td></tr>
               <tr><td>工具名 + 参数 + 结果长度</td><td>定位工具误用和结果膨胀</td><td>工具 span 的 input/output</td></tr>
-              <tr><td>token 用量（输入/输出/缓存）</td><td>算钱、看上下文增长曲线</td><td><code>usage_details</code></td></tr>
+              <tr><td>token 用量（输入/输出/缓存）</td><td>算钱、看上下文增长曲线；把它变成钱和运行时预算闸是 <a href="stage-p4.html#p4-8">P4-8</a></td><td><code>usage_details</code></td></tr>
               <tr><td>每步耗时</td><td>定位延迟来自模型还是工具</td><td>span 自动记录</td></tr>
               <tr><td>上下文大小随轮次变化</td><td>预判何时会爆</td><td>每轮记 <code>prompt_tokens</code></td></tr>
             </tbody>
           </table>
         </div>
+
+        <h5>上量之后：trace 要采样，但错误一条不能丢</h5>
+        <p>全量上报只在「自托管 + 量小」时可行。上量后有两种采法：<b>头部采样</b>在请求开始就决定记不记，便宜，但丢的恰恰是事后最想看的失败样本；<b>尾部采样</b>先全记在内存，结束时按结果决定留不留。<b>默认形态是「正常的留 1%，错误、超时、慢的一律 100% 留」</b>——排查靠的就是异常样本，把它们也按比例丢掉等于把 trace 的价值丢掉一半。量小的时候（你现在这个阶段）不用做，但表结构里先留采样标记位，别到要加时发现历史数据没法区分。</p>
 
         <div class="out"><b>产物</b><code>observability.py</code> + 一次完整 trace 的截图（能看到 5 个以上 span）</div>
         <div class="verify"><b>验收</b>打开 trace 能回答三个问题：这次任务调用了几次模型、最慢的一步是哪步、第 3 轮到第 5 轮输入 token 涨了多少。</div>

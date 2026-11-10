@@ -25,7 +25,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent.parent / "_shared"))
 from checkkit import exit_missing, run_all  # noqa: E402
 
-ALL_FAULTS = ("slow", "timeout", "dirty", "exception", "empty")
+ALL_FAULTS = ("slow", "timeout", "rate_limit", "dirty", "exception", "empty")
 
 
 class Ctx:
@@ -117,6 +117,17 @@ def c6_timeout(ctx: Ctx) -> str:
     return "ok=False 且消息带工具名"
 
 
+def c6b_rate_limit(ctx: Ctx) -> str:
+    """429 和超时都是 ok=False，但恢复路径不同：退避重发 vs 换参数。消息必须可区分。"""
+    mod = ctx.load("rate_limit=1.0")
+    got = mod.maybe_fault("search_notes", ctx.ok())
+    assert got.ok is False, "限流应当 ok=False，实际 ok=True"
+    assert "429" in got.content, f"消息里没有 429，认不出这是限流：{got.content[:60]!r}"
+    assert "重试" in got.content, f"消息里没有「重试」，下游没法按可重试分流：{got.content[:60]!r}"
+    assert "search_notes" in got.content, f"限流信息里没有工具名：{got.content[:60]!r}"
+    return "ok=False 且消息含 429 / 重试 / 工具名"
+
+
 def c7_dirty_is_not_original(ctx: Ctx) -> str:
     mod = ctx.load("dirty=1.0")
     orig = ctx.ok("真实的搜索结果：第 3 页第 2 段")
@@ -154,11 +165,11 @@ def c9_slow(ctx: Ctx) -> str:
 
 
 def c10_all_are_toolresult(ctx: Ctx) -> str:
-    for env in ("timeout=1.0", "dirty=1.0", "empty=1.0"):
+    for env in ("timeout=1.0", "rate_limit=1.0", "dirty=1.0", "empty=1.0"):
         mod = ctx.load(env)
         got = mod.maybe_fault("read_file", ctx.ok())
         assert isinstance(got, ctx.ToolResult), f"{env} 的返回值不是 ToolResult：{type(got).__name__}"
-    return "三种「返回结果」的故障都返回 ToolResult，不是裸字符串"
+    return "四种「返回结果」的故障都返回 ToolResult，不是裸字符串"
 
 
 # ---------- 3. 可复现与顺序 ----------
@@ -175,7 +186,7 @@ def c11_reproducible(ctx: Ctx) -> str:
     hits = sum(1 for c in seqs[0] if c != "基线")
     assert 0 < hits < 20, (
         f"dirty=0.5 的 20 次里命中 {hits} 次——全是或全不是，说明概率没起作用"
-        "（注意：五种故障各抽一次随机数，dirty 是第三次抽，命中率仍应是 50% 左右）"
+        "（注意：六种故障各抽一次随机数，dirty 是第四次抽，命中率仍应是 50% 左右）"
     )
     return f"20 次内容序列一致，命中 {hits} 次"
 
@@ -220,10 +231,11 @@ CHECKS = [
     ("未知键与已知键混写时已知的仍生效", c4_unknown_mixed),
     ("exception 注入抛异常且带工具名", c5_exception),
     ("timeout 注入 ok=False 且带工具名", c6_timeout),
+    ("rate_limit 注入 ok=False 且消息含 429 与重试", c6b_rate_limit),
     ("dirty 注入是「合法但错」而不是「返回失败」", c7_dirty_is_not_original),
     ("empty 注入返回空串", c8_empty),
     ("slow 注入是真变慢且仍返回正确结果", c9_slow),
-    ("三种故障的返回值都是 ToolResult", c10_all_are_toolresult),
+    ("四种故障的返回值都是 ToolResult", c10_all_are_toolresult),
     ("同一配置两次加载的故障序列一致", c11_reproducible),
     ("多故障同开时短路顺序固定", c12_short_circuit_order),
     ("非法配置值当场报错而不是静默关闭", c13_bad_value_fails_loud),

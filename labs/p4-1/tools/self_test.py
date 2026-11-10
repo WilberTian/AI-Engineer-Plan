@@ -2,7 +2,7 @@
 
     python3 labs/p4-1/tools/self_test.py
 
-6 个 mutation 都对应真实会犯的错，不是随手改坏。
+8 个 mutation 都对应真实会犯的错，不是随手改坏。
 """
 from __future__ import annotations
 
@@ -48,8 +48,14 @@ MUTATIONS = [
         "同一配置两次加载的故障序列一致",
     ),
     (
+        "429 分支被删（限流注入消失）",
+        '        return ToolResult(ok=False, content=f"HTTP 429 Too Many Requests：{tool_name} 被限流，稍后重试")',
+        "        pass",
+        "rate_limit 注入 ok=False 且消息含 429 与重试",
+    ),
+    (
         "环境变量解析不按白名单过滤键",
-        '                if k.strip() in {"slow", "timeout", "dirty", "exception", "empty"}:\n                    kw[k.strip()] = float(v)',
+        '                if k.strip() in {"slow", "timeout", "rate_limit", "dirty", "exception", "empty"}:\n                    kw[k.strip()] = float(v)',
         "                if True:\n                    kw[k.strip()] = float(v)",
         "未知键被忽略而不是让进程起不来",
     ),
